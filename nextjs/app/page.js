@@ -640,7 +640,7 @@ export default function Home() {
         }
       });
 
-      updateTimelineFocus(nextIndex);
+      updateTimelineFocus(nextIndex, true);
     },
     [timelineDynasties.length, updateTimelineFocus],
   );
@@ -1673,7 +1673,7 @@ export default function Home() {
                 value={timelineFocusIndex}
                 onChange={(event) => {
                   const nextIndex = Number(event.target.value);
-                  updateTimelineFocus(nextIndex);
+                  updateTimelineFocus(nextIndex, true);
                   scrollTimelineToIndex(nextIndex);
                 }}
                 aria-label="Timeline scrollbar"
