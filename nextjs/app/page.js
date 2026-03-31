@@ -15,6 +15,14 @@ const ERA_KEYS = ['ancient', 'medieval', 'modern'];
 const REGION_FILTERS = ['All Regions', 'Pan-Indian', 'North', 'Northwest', 'South', 'West', 'Deccan'];
 const ERA_FILTERS = ['all', 'ancient', 'medieval', 'modern'];
 const MAP_FILTERS = ['all', 'ancient', 'medieval', 'modern'];
+const NAV_ITEMS = [
+  { page: 'history', label: 'History & Power' },
+  { page: 'dynasties', label: 'Dynasties' },
+  { page: 'timeline', label: 'Timeline' },
+  { page: 'maps', label: 'Map Atlas' },
+  { page: 'quiz', label: 'Quiz' },
+  { page: 'battles', label: 'Battles' },
+];
 const DEFAULT_VISIBLE = {
   ancient: DYNASTY_BATCH_SIZE,
   medieval: DYNASTY_BATCH_SIZE,
@@ -92,6 +100,7 @@ export default function Home() {
   const [timelineQuizId, setTimelineQuizId] = useState(null);
   const [timelineQuizOrder, setTimelineQuizOrder] = useState([]);
   const [timelineQuizResult, setTimelineQuizResult] = useState(null);
+  const [mobileNavPhase, setMobileNavPhase] = useState('closed');
   const [chatPhase, setChatPhase] = useState('closed');
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
@@ -108,6 +117,7 @@ export default function Home() {
   const soundStateRef = useRef(true);
   const loadMoreRefs = useRef({});
   const draggedRulerIndex = useRef(null);
+  const mobileNavTimerRef = useRef(null);
   const chatTimerRef = useRef(null);
 
   const allDynasties = buildAllDynasties(siteData);
@@ -122,6 +132,7 @@ export default function Home() {
   const filteredMaps = mapData.filter((map) => selectedMapFilter === 'all' || map.era === selectedMapFilter);
   const timelineQuizPool = getTimelineQuizPool(allDynasties);
   const currentQuiz = quizQuestions[quizIndex] || quizQuestions[0] || null;
+  const mobileNavOpen = mobileNavPhase === 'open' || mobileNavPhase === 'opening';
   const chatOpen = chatPhase === 'open' || chatPhase === 'opening';
 
   const selectTimelineQuiz = useCallback(
@@ -239,6 +250,28 @@ export default function Home() {
     );
   }, []);
 
+  const openMobileNav = useCallback(() => {
+    clearTimeout(mobileNavTimerRef.current);
+    if (mobileNavPhase === 'open' || mobileNavPhase === 'opening') return;
+    setMobileNavPhase('opening');
+    mobileNavTimerRef.current = setTimeout(() => setMobileNavPhase('open'), 520);
+  }, [mobileNavPhase]);
+
+  const closeMobileNav = useCallback(() => {
+    clearTimeout(mobileNavTimerRef.current);
+    if (mobileNavPhase === 'closed' || mobileNavPhase === 'closing') return;
+    setMobileNavPhase('closing');
+    mobileNavTimerRef.current = setTimeout(() => setMobileNavPhase('closed'), 480);
+  }, [mobileNavPhase]);
+
+  const toggleMobileNav = useCallback(() => {
+    if (mobileNavOpen) {
+      closeMobileNav();
+    } else {
+      openMobileNav();
+    }
+  }, [mobileNavOpen, closeMobileNav, openMobileNav]);
+
   const openChat = useCallback(() => {
     clearTimeout(chatTimerRef.current);
     if (chatPhase === 'open' || chatPhase === 'opening') return;
@@ -260,6 +293,14 @@ export default function Home() {
       openChat();
     }
   }, [chatOpen, closeChat, openChat]);
+
+  const handleMobileNavNavigate = useCallback(
+    (page) => {
+      closeMobileNav();
+      navigateTo(page);
+    },
+    [closeMobileNav, navigateTo],
+  );
 
   const performChatAction = useCallback(
     (action) => {
@@ -1095,38 +1136,20 @@ export default function Home() {
           BHARATAM
         </div>
         <ul className="nav-links">
-          <li>
-            <a className={currentPage === 'history' ? 'nav-active' : ''} onClick={() => navigateTo('history')}>
-              History &amp; Power
-            </a>
-          </li>
-          <li>
-            <a className={currentPage === 'dynasties' ? 'nav-active' : ''} onClick={() => navigateTo('dynasties')}>
-              Dynasties
-            </a>
-          </li>
-          <li>
-            <a className={currentPage === 'timeline' ? 'nav-active' : ''} onClick={() => navigateTo('timeline')}>
-              Timeline
-            </a>
-          </li>
-          <li>
-            <a className={currentPage === 'maps' ? 'nav-active' : ''} onClick={() => navigateTo('maps')}>
-              Map Atlas
-            </a>
-          </li>
-          <li>
-            <a className={currentPage === 'quiz' ? 'nav-active' : ''} onClick={() => navigateTo('quiz')}>
-              Quiz
-            </a>
-          </li>
-          <li>
-            <a className={currentPage === 'battles' ? 'nav-active' : ''} onClick={() => navigateTo('battles')}>
-              Battles
-            </a>
-          </li>
+          {NAV_ITEMS.map((item) => (
+            <li key={item.page}>
+              <a className={currentPage === item.page ? 'nav-active' : ''} onClick={() => navigateTo(item.page)}>
+                {item.label}
+              </a>
+            </li>
+          ))}
         </ul>
         <div className="nav-acts">
+          <button className={`nav-menu-btn ${mobileNavOpen ? 'active' : ''}`} onClick={toggleMobileNav} aria-label="Open navigation menu">
+            <span className="nav-menu-line"></span>
+            <span className="nav-menu-line"></span>
+            <span className="nav-menu-line"></span>
+          </button>
           <button
             className="nav-btn"
             id="home-btn"
@@ -1143,6 +1166,25 @@ export default function Home() {
           </button>
         </div>
       </nav>
+
+      <div className={`mobile-nav-shell ${mobileNavPhase}`}>
+        <button className={`mobile-nav-backdrop ${mobileNavPhase}`} onClick={closeMobileNav} aria-label="Close navigation menu"></button>
+        <aside className={`mobile-nav-panel ${mobileNavPhase}`} aria-hidden={mobileNavPhase === 'closed'}>
+          <div className="mobile-nav-eye">Quick Navigation</div>
+          <div className="mobile-nav-title">Bharatam Menu</div>
+          <div className="mobile-nav-list">
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.page}
+                className={`mobile-nav-link ${currentPage === item.page ? 'active' : ''}`}
+                onClick={() => handleMobileNavNavigate(item.page)}
+              >
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </aside>
+      </div>
 
       <div className={`pg ${currentPage === 'home' ? 'act' : ''}`} id="pg-home">
         <div className="hbg"></div>
@@ -1177,13 +1219,6 @@ export default function Home() {
           >
             Founded by Ashutosh Kesari
           </div>
-        </div>
-
-        <div className="home-feature-strip">
-          <div className="home-feature-pill">Next.js image optimization</div>
-          <div className="home-feature-pill">Offline-ready map atlas</div>
-          <div className="home-feature-pill">Timeline and chronology quiz</div>
-          <div className="home-feature-pill">Bookmarks and smart filters</div>
         </div>
 
         <div className="h-cards">
