@@ -573,15 +573,16 @@ export default function Home() {
 
   const updateTimelineFocus = useCallback(
     (nextIndex, fromScroll = false) => {
-      if (timelineDynasties.length === 0) return;
-      const boundedIndex = Math.max(0, Math.min(nextIndex, timelineDynasties.length - 1));
+      const len = timelineDynasties.length;
+      if (len === 0) return;
+      const boundedIndex = Math.max(0, Math.min(nextIndex, len - 1));
       setTimelineFocusIndex((current) => {
         if (current === boundedIndex) return current;
         if (!fromScroll) playTimelineTick();
         return boundedIndex;
       });
     },
-    [playTimelineTick, timelineDynasties.length],
+    [playTimelineTick, timelineDynasties],
   );
 
   const scrollTimelineToIndex = useCallback(
@@ -612,7 +613,7 @@ export default function Home() {
         behavior: 'smooth',
       });
     },
-    [timelineDynasties.length],
+    [timelineDynasties],
   );
 
   const syncTimelineFocusFromScroll = useCallback(
@@ -642,7 +643,7 @@ export default function Home() {
 
       updateTimelineFocus(nextIndex, true);
     },
-    [timelineDynasties.length, updateTimelineFocus],
+    [timelineDynasties, updateTimelineFocus],
   );
 
   // Load data, favorites, and audio on mount.
@@ -729,7 +730,7 @@ export default function Home() {
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [currentPage, syncTimelineFocusFromScroll, timelineDynasties.length]);
+  }, [currentPage, syncTimelineFocusFromScroll, timelineDynasties]);
 
   useEffect(() => {
     if (quizIndex >= quizQuestions.length) {
