@@ -1678,24 +1678,23 @@ export default function Home() {
                 <span>{focusedTimelineDynasty.region}</span>
               </div>
             </div>
-          <div className="timeline-scrubber-eras">
-            {['ancient', 'medieval', 'modern']
-              .filter((era) => timelineDynasties.some((dynasty) => dynasty.era === era))
-              .map((era) => (
-                <button
-                  key={era}
-                  className={`timeline-era-chip ${focusedTimelineDynasty.era === era ? 'active' : ''}`}
-                  onClick={() => {
-                    const eraIndex = timelineDynasties.findIndex((dynasty) => dynasty.era === era);
-                    const nextIndex = eraIndex === -1 ? 0 : eraIndex;
-                    updateTimelineFocus(nextIndex, true);
-                    scrollTimelineToIndex(nextIndex);
-                      }}
-                    >
-                      {ERA_LABELS[era]}
-                    </button>
-                  ))}
-              </div>
+            <div className="timeline-scrubber-eras">
+              {['ancient', 'medieval', 'modern']
+                .filter((era) => timelineDynasties.some((dynasty) => dynasty.era === era))
+                .map((era) => (
+                  <button
+                    key={era}
+                    className={`timeline-era-chip ${focusedTimelineDynasty.era === era ? 'active' : ''}`}
+                    onClick={() => {
+                      const eraIndex = timelineDynasties.findIndex((dynasty) => dynasty.era === era);
+                      const nextIndex = eraIndex === -1 ? 0 : eraIndex;
+                      updateTimelineFocus(nextIndex, true);
+                      scrollTimelineToIndex(nextIndex);
+                    }}
+                  >
+                    {ERA_LABELS[era]}
+                  </button>
+                ))}
             </div>
           </section>
         )}
