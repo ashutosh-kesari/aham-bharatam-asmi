@@ -122,7 +122,6 @@ export default function Home() {
   const draggedRulerIndex = useRef(null);
   const mobileNavTimerRef = useRef(null);
   const chatTimerRef = useRef(null);
-  const isSliderDragging = useRef(false);
 
   const allDynasties = buildAllDynasties(siteData);
   const favoriteDynasties = allDynasties.filter((dynasty) => favorites.includes(dynasty.id));
@@ -739,8 +738,6 @@ export default function Home() {
 
   useEffect(() => {
     if (currentPage !== 'timeline' || typeof window === 'undefined') return undefined;
-    // Skip sync while user is dragging the slider
-    if (isSliderDragging.current) return undefined;
 
     const frame = window.requestAnimationFrame(() => {
       syncTimelineFocusFromScroll(timelinePageRef.current);
@@ -1681,52 +1678,18 @@ export default function Home() {
                 <span>{focusedTimelineDynasty.region}</span>
               </div>
             </div>
-              <div className="timeline-scrubber-track">
-                <input
-                  className="timeline-scrubber-range"
-                  type="range"
-                  min="0"
-                  max={String(Math.max(0, timelineDynasties.length - 1))}
-                  step="1"
-                  value={timelineFocusIndex}
-                  onMouseDown={() => {
-                    isSliderDragging.current = true;
-                  }}
-                  onMouseUp={(event) => {
-                    isSliderDragging.current = false;
-                    const nextIndex = Number(event.target.value);
-                    scrollTimelineToIndex(nextIndex);
-                  }}
-                  onTouchStart={() => {
-                    isSliderDragging.current = true;
-                  }}
-                  onTouchEnd={() => {
-                    isSliderDragging.current = false;
-                  }}
-                  onChange={(event) => {
-                    const nextIndex = Number(event.target.value);
+          <div className="timeline-scrubber-eras">
+            {['ancient', 'medieval', 'modern']
+              .filter((era) => timelineDynasties.some((dynasty) => dynasty.era === era))
+              .map((era) => (
+                <button
+                  key={era}
+                  className={`timeline-era-chip ${focusedTimelineDynasty.era === era ? 'active' : ''}`}
+                  onClick={() => {
+                    const eraIndex = timelineDynasties.findIndex((dynasty) => dynasty.era === era);
+                    const nextIndex = eraIndex === -1 ? 0 : eraIndex;
                     updateTimelineFocus(nextIndex, true);
                     scrollTimelineToIndex(nextIndex);
-                  }}
-                  aria-label="Timeline scrollbar"
-                />
-              <div className="timeline-scrubber-labels">
-                <span>{timelineDynasties[0]?.period || ''}</span>
-                <span>{focusedTimelineDynasty.period}</span>
-                <span>{timelineDynasties[timelineDynasties.length - 1]?.period || ''}</span>
-              </div>
-              <div className="timeline-scrubber-eras">
-                {['ancient', 'medieval', 'modern']
-                  .filter((era) => timelineDynasties.some((dynasty) => dynasty.era === era))
-                  .map((era) => (
-                    <button
-                      key={era}
-                      className={`timeline-era-chip ${focusedTimelineDynasty.era === era ? 'active' : ''}`}
-                      onClick={() => {
-                        const eraIndex = timelineDynasties.findIndex((dynasty) => dynasty.era === era);
-                        const nextIndex = eraIndex === -1 ? 0 : eraIndex;
-      updateTimelineFocus(nextIndex, true);
-                        scrollTimelineToIndex(nextIndex);
                       }}
                     >
                       {ERA_LABELS[era]}
