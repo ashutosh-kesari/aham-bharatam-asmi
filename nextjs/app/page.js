@@ -554,24 +554,24 @@ export default function Home() {
     const gainNode = context.createGain();
     const filter = context.createBiquadFilter();
 
-    oscillator.type = 'triangle';
-    oscillator.frequency.setValueAtTime(780, now);
-    oscillator.frequency.exponentialRampToValueAtTime(420, now + 0.065);
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(460, now);
+    oscillator.frequency.exponentialRampToValueAtTime(320, now + 0.08);
 
-    filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(1200, now);
-    filter.Q.value = 0.65;
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(920, now);
+    filter.Q.value = 0.2;
 
     gainNode.gain.setValueAtTime(0.0001, now);
-    gainNode.gain.exponentialRampToValueAtTime(0.035, now + 0.01);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.085);
+    gainNode.gain.exponentialRampToValueAtTime(0.014, now + 0.012);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
 
     oscillator.connect(filter);
     filter.connect(gainNode);
     gainNode.connect(context.destination);
 
     oscillator.start(now);
-    oscillator.stop(now + 0.09);
+    oscillator.stop(now + 0.12);
   }, [soundOn]);
 
   const updateTimelineFocus = useCallback(
@@ -662,6 +662,32 @@ export default function Home() {
       return current === nextIndex || (selectedDynasty == null && bounded === current) ? bounded : nextIndex;
     });
   }, [selectedDynasty, timelineDynasties]);
+
+  useEffect(() => {
+    if (currentPage !== 'timeline' || typeof window === 'undefined') return undefined;
+
+    let wheelLocked = false;
+
+    const handleTimelineWheel = (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (!target.closest('#pg-timeline')) return;
+      if (target.closest('.timeline-scrubber-range')) return;
+      if (wheelLocked) return;
+
+      event.preventDefault();
+      wheelLocked = true;
+      updateTimelineFocus(timelineFocusIndex + (event.deltaY > 0 ? 1 : -1));
+
+      window.setTimeout(() => {
+        wheelLocked = false;
+      }, 120);
+    };
+
+    window.addEventListener('wheel', handleTimelineWheel, { passive: false });
+
+    return () => window.removeEventListener('wheel', handleTimelineWheel);
+  }, [currentPage, timelineFocusIndex, updateTimelineFocus]);
 
   useEffect(() => {
     if (quizIndex >= quizQuestions.length) {
