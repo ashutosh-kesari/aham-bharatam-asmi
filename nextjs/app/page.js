@@ -115,6 +115,7 @@ export default function Home() {
   const cursorRef = useRef({ x: 0, y: 0, rx: 0, ry: 0 });
   const audioRef = useRef(null);
   const timelineTickAudioRef = useRef(null);
+  const timelinePageRef = useRef(null);
   const hasStartedRef = useRef(false);
   const soundStateRef = useRef(true);
   const loadMoreRefs = useRef({});
@@ -134,10 +135,6 @@ export default function Home() {
   const filteredMaps = mapData.filter((map) => selectedMapFilter === 'all' || map.era === selectedMapFilter);
   const timelineDynasties = [...filteredDynasties].sort((left, right) => left.sortYear - right.sortYear);
   const focusedTimelineDynasty = timelineDynasties[timelineFocusIndex] || timelineDynasties[0] || null;
-  const activeTimelineDynasties =
-    selectedEraFilter === 'all' && focusedTimelineDynasty
-      ? timelineDynasties.filter((dynasty) => dynasty.era === focusedTimelineDynasty.era)
-      : timelineDynasties;
   const timelineQuizPool = getTimelineQuizPool(allDynasties);
   const currentQuiz = quizQuestions[quizIndex] || quizQuestions[0] || null;
   const mobileNavOpen = mobileNavPhase === 'open' || mobileNavPhase === 'opening';
@@ -587,6 +584,67 @@ export default function Home() {
     [playTimelineTick, timelineDynasties.length],
   );
 
+  const scrollTimelineToIndex = useCallback(
+    (nextIndex) => {
+      const container = timelinePageRef.current;
+      const boundedIndex = Math.max(0, Math.min(nextIndex, timelineDynasties.length - 1));
+      if (!container || timelineDynasties.length === 0) return;
+
+      const card = container.querySelector(`[data-timeline-index="${boundedIndex}"]`);
+      const scrubber = container.querySelector('.timeline-scrubber');
+      const scrubberHeight = scrubber instanceof HTMLElement ? scrubber.offsetHeight : 0;
+
+      if (card instanceof HTMLElement) {
+        const targetTop = Math.max(0, card.offsetTop - scrubberHeight - 24);
+        container.scrollTo({
+          top: targetTop,
+          behavior: 'smooth',
+        });
+        return;
+      }
+
+      if (timelineDynasties.length <= 1) return;
+
+      const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
+      const progress = boundedIndex / (timelineDynasties.length - 1);
+      container.scrollTo({
+        top: maxScroll * progress,
+        behavior: 'smooth',
+      });
+    },
+    [timelineDynasties.length],
+  );
+
+  const syncTimelineFocusFromScroll = useCallback(
+    (container) => {
+      if (!container || timelineDynasties.length === 0) return;
+
+      const cards = Array.from(container.querySelectorAll('[data-timeline-index]'));
+      if (cards.length === 0) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const anchorY = containerRect.top + Math.min(container.clientHeight * 0.52, 360);
+
+      let nextIndex = 0;
+      let nearestDistance = Number.POSITIVE_INFINITY;
+
+      cards.forEach((card) => {
+        if (!(card instanceof HTMLElement)) return;
+        const rect = card.getBoundingClientRect();
+        const cardCenter = rect.top + rect.height / 2;
+        const distance = Math.abs(cardCenter - anchorY);
+
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nextIndex = Number(card.dataset.timelineIndex || 0);
+        }
+      });
+
+      updateTimelineFocus(nextIndex);
+    },
+    [timelineDynasties.length, updateTimelineFocus],
+  );
+
   // Load data, favorites, and audio on mount.
   useEffect(() => {
     let active = true;
@@ -666,28 +724,12 @@ export default function Home() {
   useEffect(() => {
     if (currentPage !== 'timeline' || typeof window === 'undefined') return undefined;
 
-    let wheelLocked = false;
+    const frame = window.requestAnimationFrame(() => {
+      syncTimelineFocusFromScroll(timelinePageRef.current);
+    });
 
-    const handleTimelineWheel = (event) => {
-      const target = event.target;
-      if (!(target instanceof HTMLElement)) return;
-      if (!target.closest('#pg-timeline')) return;
-      if (target.closest('.timeline-scrubber-range')) return;
-      if (wheelLocked) return;
-
-      event.preventDefault();
-      wheelLocked = true;
-      updateTimelineFocus(timelineFocusIndex + (event.deltaY > 0 ? 1 : -1));
-
-      window.setTimeout(() => {
-        wheelLocked = false;
-      }, 120);
-    };
-
-    window.addEventListener('wheel', handleTimelineWheel, { passive: false });
-
-    return () => window.removeEventListener('wheel', handleTimelineWheel);
-  }, [currentPage, timelineFocusIndex, updateTimelineFocus]);
+    return () => window.cancelAnimationFrame(frame);
+  }, [currentPage, syncTimelineFocusFromScroll, timelineDynasties.length]);
 
   useEffect(() => {
     if (quizIndex >= quizQuestions.length) {
@@ -1598,20 +1640,19 @@ export default function Home() {
         </div>
       </div>
 
-      <div className={`pg inner ${currentPage === 'timeline' ? 'act' : ''}`} id="pg-timeline">
+      <div
+        className={`pg inner ${currentPage === 'timeline' ? 'act' : ''}`}
+        id="pg-timeline"
+        ref={timelinePageRef}
+        onScroll={(event) => syncTimelineFocusFromScroll(event.currentTarget)}
+      >
         <div className="pg-hdr">
           <div className="pg-eye">Chronological Overview</div>
           <div className="pg-ttl">Dynasty Timeline</div>
           <div className="pg-sub">A continuous visual ordering of the dynasties currently in the archive.</div>
         </div>
         {focusedTimelineDynasty && (
-          <section
-            className="timeline-scrubber"
-            onWheel={(event) => {
-              event.preventDefault();
-              updateTimelineFocus(timelineFocusIndex + (event.deltaY > 0 ? 1 : -1));
-            }}
-          >
+          <section className="timeline-scrubber">
             <div className="timeline-scrubber-copy">
               <div className="timeline-scrubber-eye">Scroll Through Time</div>
               <h2>{focusedTimelineDynasty.name}</h2>
@@ -1630,7 +1671,11 @@ export default function Home() {
                 max={String(Math.max(0, timelineDynasties.length - 1))}
                 step="1"
                 value={timelineFocusIndex}
-                onChange={(event) => updateTimelineFocus(Number(event.target.value))}
+                onChange={(event) => {
+                  const nextIndex = Number(event.target.value);
+                  updateTimelineFocus(nextIndex);
+                  scrollTimelineToIndex(nextIndex);
+                }}
                 aria-label="Timeline scrollbar"
               />
               <div className="timeline-scrubber-labels">
@@ -1647,7 +1692,9 @@ export default function Home() {
                       className={`timeline-era-chip ${focusedTimelineDynasty.era === era ? 'active' : ''}`}
                       onClick={() => {
                         const eraIndex = timelineDynasties.findIndex((dynasty) => dynasty.era === era);
-                        updateTimelineFocus(eraIndex === -1 ? 0 : eraIndex);
+                        const nextIndex = eraIndex === -1 ? 0 : eraIndex;
+                        updateTimelineFocus(nextIndex);
+                        scrollTimelineToIndex(nextIndex);
                       }}
                     >
                       {ERA_LABELS[era]}
@@ -1658,10 +1705,11 @@ export default function Home() {
           </section>
         )}
         <div className="timeline-overview">
-          {activeTimelineDynasties.map((dynasty, index) => (
+          {timelineDynasties.map((dynasty, index) => (
             <article
               key={dynasty.id}
-              className={`timeline-overview-card ${dynasty.id === focusedTimelineDynasty?.id ? 'focus' : ''}`}
+              data-timeline-index={index}
+              className={`timeline-overview-card ${dynasty.id === focusedTimelineDynasty?.id ? 'focus' : ''} ${focusedTimelineDynasty?.era === dynasty.era ? 'era-focus' : ''}`}
               style={{ transitionDelay: `${(index * 0.04).toFixed(2)}s` }}
             >
               <div className="timeline-overview-year">{dynasty.period}</div>

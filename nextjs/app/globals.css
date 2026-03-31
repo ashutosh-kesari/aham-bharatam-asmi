@@ -1450,6 +1450,7 @@ body::after {
 .timeline-scrubber {
   max-width:1180px; margin:0 auto 24px; padding:0 clamp(16px,4vw,48px);
   display:grid; grid-template-columns:minmax(280px,1fr) minmax(340px,1.2fr); gap:18px; align-items:end;
+  position:sticky; top:calc(var(--nav-h) + 14px); z-index:24;
 }
 .timeline-scrubber-copy,
 .timeline-scrubber-track {
@@ -1520,6 +1521,7 @@ body::after {
 .timeline-overview-card.vis { opacity:1; transform:translateY(0); }
 .timeline-overview-card:hover { border-color:var(--gold); box-shadow:0 0 24px rgba(200,148,42,.12); }
 .timeline-overview-card.focus { border-color:var(--gold); box-shadow:0 0 28px rgba(200,148,42,.16); }
+.timeline-overview-card.era-focus { background:rgba(19,14,8,.92); }
 .timeline-overview-year {
   font-family:'Cinzel', serif; font-size:.62rem; letter-spacing:.26em; color:var(--saffron); text-transform:uppercase;
 }
