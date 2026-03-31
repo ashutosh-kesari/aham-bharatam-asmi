@@ -572,12 +572,12 @@ export default function Home() {
   }, [soundOn]);
 
   const updateTimelineFocus = useCallback(
-    (nextIndex) => {
+    (nextIndex, fromScroll = false) => {
       if (timelineDynasties.length === 0) return;
       const boundedIndex = Math.max(0, Math.min(nextIndex, timelineDynasties.length - 1));
       setTimelineFocusIndex((current) => {
         if (current === boundedIndex) return current;
-        playTimelineTick();
+        if (!fromScroll) playTimelineTick();
         return boundedIndex;
       });
     },
@@ -1693,7 +1693,7 @@ export default function Home() {
                       onClick={() => {
                         const eraIndex = timelineDynasties.findIndex((dynasty) => dynasty.era === era);
                         const nextIndex = eraIndex === -1 ? 0 : eraIndex;
-                        updateTimelineFocus(nextIndex);
+      updateTimelineFocus(nextIndex, true);
                         scrollTimelineToIndex(nextIndex);
                       }}
                     >
