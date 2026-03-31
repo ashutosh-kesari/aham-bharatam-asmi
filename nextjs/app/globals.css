@@ -1483,25 +1483,35 @@ body::after {
 .timeline-scrubber-range {
   width:100%; appearance:none; background:transparent; margin:8px 0 12px;
   cursor: pointer;
+  touch-action: none;
 }
 .timeline-scrubber-range::-webkit-slider-runnable-track {
-  height:6px; border-radius:999px;
+  height:8px; border-radius:999px;
   background:linear-gradient(90deg,rgba(200,148,42,.18),rgba(232,184,75,.92),rgba(200,148,42,.18));
 }
 .timeline-scrubber-range::-moz-range-track {
-  height:6px; border-radius:999px;
+  height:8px; border-radius:999px;
   background:linear-gradient(90deg,rgba(200,148,42,.18),rgba(232,184,75,.92),rgba(200,148,42,.18));
 }
 .timeline-scrubber-range::-webkit-slider-thumb {
-  appearance:none; margin-top:-8px; width:24px; height:24px; border-radius:50%;
-  border:2px solid var(--gold-pl); background:radial-gradient(circle,var(--gold-lt),var(--gold-dk));
-  box-shadow:0 0 0 4px rgba(200,148,42,.16), 0 2px 8px rgba(0,0,0,0.3);
+  appearance:none; margin-top:-10px; width:28px; height:28px; border-radius:50%;
+  border:3px solid var(--gold-pl); background:radial-gradient(circle at 30% 30%,var(--gold-lt),var(--gold-dk));
+  box-shadow:0 0 0 4px rgba(200,148,42,.2), 0 4px 12px rgba(0,0,0,0.4);
   cursor: grab;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.timeline-scrubber-range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow:0 0 0 6px rgba(200,148,42,.25), 0 6px 16px rgba(0,0,0,0.5);
+}
+.timeline-scrubber-range::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.1);
 }
 .timeline-scrubber-range::-moz-range-thumb {
-  width:24px; height:24px; border-radius:50%;
-  border:2px solid var(--gold-pl); background:radial-gradient(circle,var(--gold-lt),var(--gold-dk));
-  box-shadow:0 0 0 4px rgba(200,148,42,.16), 0 2px 8px rgba(0,0,0,0.3);
+  width:28px; height:28px; border-radius:50%;
+  border:3px solid var(--gold-pl); background:radial-gradient(circle at 30% 30%,var(--gold-lt),var(--gold-dk));
+  box-shadow:0 0 0 4px rgba(200,148,42,.2), 0 4px 12px rgba(0,0,0,0.4);
   cursor: grab;
 }
 .timeline-scrubber-labels {

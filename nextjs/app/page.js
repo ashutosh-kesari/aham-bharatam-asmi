@@ -122,6 +122,7 @@ export default function Home() {
   const draggedRulerIndex = useRef(null);
   const mobileNavTimerRef = useRef(null);
   const chatTimerRef = useRef(null);
+  const isSliderDragging = useRef(false);
 
   const allDynasties = buildAllDynasties(siteData);
   const favoriteDynasties = allDynasties.filter((dynasty) => favorites.includes(dynasty.id));
@@ -700,30 +701,46 @@ export default function Home() {
     setVisibleDynasties(DEFAULT_VISIBLE);
   }, [selectedEraFilter, selectedRegionFilter]);
 
+  // Track if we should reset focus - only when explicitly changing dynasty selection
+  const [lastFocusedDynastyId, setLastFocusedDynastyId] = useState(null);
+
   useEffect(() => {
     if (timelineDynasties.length === 0) {
       setTimelineFocusIndex(0);
+      setLastFocusedDynastyId(null);
       return;
     }
 
+    // Only reset if selectedDynasty changed or dynasty list fundamentally changed
     const preferredId =
       selectedDynasty && timelineDynasties.some((dynasty) => dynasty.id === selectedDynasty.id)
         ? selectedDynasty.id
-        : timelineDynasties[0].id;
+        : timelineDynasties[0]?.id;
 
     const nextIndex = Math.max(
       0,
       timelineDynasties.findIndex((dynasty) => dynasty.id === preferredId),
     );
 
+    // Only update if it's a different dynasty than what we're focused on
     setTimelineFocusIndex((current) => {
       const bounded = Math.max(0, Math.min(current, timelineDynasties.length - 1));
-      return current === nextIndex || (selectedDynasty == null && bounded === current) ? bounded : nextIndex;
+      const currentDynasty = timelineDynasties[bounded];
+      
+      // Don't reset if we're already viewing the same dynasty
+      if (currentDynasty && currentDynasty.id === lastFocusedDynastyId && bounded === nextIndex) {
+        return bounded;
+      }
+      
+      setLastFocusedDynastyId(preferredId);
+      return current === nextIndex ? bounded : nextIndex;
     });
-  }, [selectedDynasty, timelineDynasties]);
+  }, [selectedDynasty, timelineDynasties, lastFocusedDynastyId]);
 
   useEffect(() => {
     if (currentPage !== 'timeline' || typeof window === 'undefined') return undefined;
+    // Skip sync while user is dragging the slider
+    if (isSliderDragging.current) return undefined;
 
     const frame = window.requestAnimationFrame(() => {
       syncTimelineFocusFromScroll(timelinePageRef.current);
@@ -1664,21 +1681,35 @@ export default function Home() {
                 <span>{focusedTimelineDynasty.region}</span>
               </div>
             </div>
-            <div className="timeline-scrubber-track">
-              <input
-                className="timeline-scrubber-range"
-                type="range"
-                min="0"
-                max={String(Math.max(0, timelineDynasties.length - 1))}
-                step="1"
-                value={timelineFocusIndex}
-                onChange={(event) => {
-                  const nextIndex = Number(event.target.value);
-                  updateTimelineFocus(nextIndex, true);
-                  scrollTimelineToIndex(nextIndex);
-                }}
-                aria-label="Timeline scrollbar"
-              />
+              <div className="timeline-scrubber-track">
+                <input
+                  className="timeline-scrubber-range"
+                  type="range"
+                  min="0"
+                  max={String(Math.max(0, timelineDynasties.length - 1))}
+                  step="1"
+                  value={timelineFocusIndex}
+                  onMouseDown={() => {
+                    isSliderDragging.current = true;
+                  }}
+                  onMouseUp={(event) => {
+                    isSliderDragging.current = false;
+                    const nextIndex = Number(event.target.value);
+                    scrollTimelineToIndex(nextIndex);
+                  }}
+                  onTouchStart={() => {
+                    isSliderDragging.current = true;
+                  }}
+                  onTouchEnd={() => {
+                    isSliderDragging.current = false;
+                  }}
+                  onChange={(event) => {
+                    const nextIndex = Number(event.target.value);
+                    updateTimelineFocus(nextIndex, true);
+                    scrollTimelineToIndex(nextIndex);
+                  }}
+                  aria-label="Timeline scrollbar"
+                />
               <div className="timeline-scrubber-labels">
                 <span>{timelineDynasties[0]?.period || ''}</span>
                 <span>{focusedTimelineDynasty.period}</span>
