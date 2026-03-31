@@ -15,6 +15,14 @@ const ERA_KEYS = ['ancient', 'medieval', 'modern'];
 const REGION_FILTERS = ['All Regions', 'Pan-Indian', 'North', 'Northwest', 'South', 'West', 'Deccan'];
 const ERA_FILTERS = ['all', 'ancient', 'medieval', 'modern'];
 const MAP_FILTERS = ['all', 'ancient', 'medieval', 'modern'];
+const NAV_ITEMS = [
+  { page: 'history', label: 'History & Power' },
+  { page: 'dynasties', label: 'Dynasties' },
+  { page: 'timeline', label: 'Timeline' },
+  { page: 'maps', label: 'Map Atlas' },
+  { page: 'quiz', label: 'Quiz' },
+  { page: 'battles', label: 'Battles' },
+];
 const DEFAULT_VISIBLE = {
   ancient: DYNASTY_BATCH_SIZE,
   medieval: DYNASTY_BATCH_SIZE,
@@ -89,9 +97,11 @@ export default function Home() {
   const [quizChoice, setQuizChoice] = useState(null);
   const [quizScore, setQuizScore] = useState(0);
   const [quizComplete, setQuizComplete] = useState(false);
+  const [timelineFocusIndex, setTimelineFocusIndex] = useState(0);
   const [timelineQuizId, setTimelineQuizId] = useState(null);
   const [timelineQuizOrder, setTimelineQuizOrder] = useState([]);
   const [timelineQuizResult, setTimelineQuizResult] = useState(null);
+  const [mobileNavPhase, setMobileNavPhase] = useState('closed');
   const [chatPhase, setChatPhase] = useState('closed');
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
@@ -104,10 +114,12 @@ export default function Home() {
   ]);
   const cursorRef = useRef({ x: 0, y: 0, rx: 0, ry: 0 });
   const audioRef = useRef(null);
+  const timelineTickAudioRef = useRef(null);
   const hasStartedRef = useRef(false);
   const soundStateRef = useRef(true);
   const loadMoreRefs = useRef({});
   const draggedRulerIndex = useRef(null);
+  const mobileNavTimerRef = useRef(null);
   const chatTimerRef = useRef(null);
 
   const allDynasties = buildAllDynasties(siteData);
@@ -120,8 +132,15 @@ export default function Home() {
     return accumulator;
   }, {});
   const filteredMaps = mapData.filter((map) => selectedMapFilter === 'all' || map.era === selectedMapFilter);
+  const timelineDynasties = [...filteredDynasties].sort((left, right) => left.sortYear - right.sortYear);
+  const focusedTimelineDynasty = timelineDynasties[timelineFocusIndex] || timelineDynasties[0] || null;
+  const activeTimelineDynasties =
+    selectedEraFilter === 'all' && focusedTimelineDynasty
+      ? timelineDynasties.filter((dynasty) => dynasty.era === focusedTimelineDynasty.era)
+      : timelineDynasties;
   const timelineQuizPool = getTimelineQuizPool(allDynasties);
   const currentQuiz = quizQuestions[quizIndex] || quizQuestions[0] || null;
+  const mobileNavOpen = mobileNavPhase === 'open' || mobileNavPhase === 'opening';
   const chatOpen = chatPhase === 'open' || chatPhase === 'opening';
 
   const selectTimelineQuiz = useCallback(
@@ -239,6 +258,28 @@ export default function Home() {
     );
   }, []);
 
+  const openMobileNav = useCallback(() => {
+    clearTimeout(mobileNavTimerRef.current);
+    if (mobileNavPhase === 'open' || mobileNavPhase === 'opening') return;
+    setMobileNavPhase('opening');
+    mobileNavTimerRef.current = setTimeout(() => setMobileNavPhase('open'), 520);
+  }, [mobileNavPhase]);
+
+  const closeMobileNav = useCallback(() => {
+    clearTimeout(mobileNavTimerRef.current);
+    if (mobileNavPhase === 'closed' || mobileNavPhase === 'closing') return;
+    setMobileNavPhase('closing');
+    mobileNavTimerRef.current = setTimeout(() => setMobileNavPhase('closed'), 480);
+  }, [mobileNavPhase]);
+
+  const toggleMobileNav = useCallback(() => {
+    if (mobileNavOpen) {
+      closeMobileNav();
+    } else {
+      openMobileNav();
+    }
+  }, [mobileNavOpen, closeMobileNav, openMobileNav]);
+
   const openChat = useCallback(() => {
     clearTimeout(chatTimerRef.current);
     if (chatPhase === 'open' || chatPhase === 'opening') return;
@@ -260,6 +301,14 @@ export default function Home() {
       openChat();
     }
   }, [chatOpen, closeChat, openChat]);
+
+  const handleMobileNavNavigate = useCallback(
+    (page) => {
+      closeMobileNav();
+      navigateTo(page);
+    },
+    [closeMobileNav, navigateTo],
+  );
 
   const performChatAction = useCallback(
     (action) => {
@@ -485,6 +534,59 @@ export default function Home() {
     setTimelineQuizResult(actual === expected ? 'correct' : 'incorrect');
   };
 
+  const playTimelineTick = useCallback(() => {
+    if (!soundOn || typeof window === 'undefined') return;
+
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    if (!timelineTickAudioRef.current) {
+      timelineTickAudioRef.current = new AudioContextClass();
+    }
+
+    const context = timelineTickAudioRef.current;
+    if (context.state === 'suspended') {
+      context.resume().catch(() => {});
+    }
+
+    const now = context.currentTime;
+    const oscillator = context.createOscillator();
+    const gainNode = context.createGain();
+    const filter = context.createBiquadFilter();
+
+    oscillator.type = 'triangle';
+    oscillator.frequency.setValueAtTime(780, now);
+    oscillator.frequency.exponentialRampToValueAtTime(420, now + 0.065);
+
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(1200, now);
+    filter.Q.value = 0.65;
+
+    gainNode.gain.setValueAtTime(0.0001, now);
+    gainNode.gain.exponentialRampToValueAtTime(0.035, now + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.085);
+
+    oscillator.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(context.destination);
+
+    oscillator.start(now);
+    oscillator.stop(now + 0.09);
+  }, [soundOn]);
+
+  const updateTimelineFocus = useCallback(
+    (nextIndex) => {
+      if (timelineDynasties.length === 0) return;
+      const boundedIndex = Math.max(0, Math.min(nextIndex, timelineDynasties.length - 1));
+      setTimelineFocusIndex((current) => {
+        if (current === boundedIndex) return current;
+        playTimelineTick();
+        return boundedIndex;
+      });
+    },
+    [playTimelineTick, timelineDynasties.length],
+  );
+
   // Load data, favorites, and audio on mount.
   useEffect(() => {
     let active = true;
@@ -538,6 +640,28 @@ export default function Home() {
   useEffect(() => {
     setVisibleDynasties(DEFAULT_VISIBLE);
   }, [selectedEraFilter, selectedRegionFilter]);
+
+  useEffect(() => {
+    if (timelineDynasties.length === 0) {
+      setTimelineFocusIndex(0);
+      return;
+    }
+
+    const preferredId =
+      selectedDynasty && timelineDynasties.some((dynasty) => dynasty.id === selectedDynasty.id)
+        ? selectedDynasty.id
+        : timelineDynasties[0].id;
+
+    const nextIndex = Math.max(
+      0,
+      timelineDynasties.findIndex((dynasty) => dynasty.id === preferredId),
+    );
+
+    setTimelineFocusIndex((current) => {
+      const bounded = Math.max(0, Math.min(current, timelineDynasties.length - 1));
+      return current === nextIndex || (selectedDynasty == null && bounded === current) ? bounded : nextIndex;
+    });
+  }, [selectedDynasty, timelineDynasties]);
 
   useEffect(() => {
     if (quizIndex >= quizQuestions.length) {
@@ -1095,38 +1219,20 @@ export default function Home() {
           BHARATAM
         </div>
         <ul className="nav-links">
-          <li>
-            <a className={currentPage === 'history' ? 'nav-active' : ''} onClick={() => navigateTo('history')}>
-              History &amp; Power
-            </a>
-          </li>
-          <li>
-            <a className={currentPage === 'dynasties' ? 'nav-active' : ''} onClick={() => navigateTo('dynasties')}>
-              Dynasties
-            </a>
-          </li>
-          <li>
-            <a className={currentPage === 'timeline' ? 'nav-active' : ''} onClick={() => navigateTo('timeline')}>
-              Timeline
-            </a>
-          </li>
-          <li>
-            <a className={currentPage === 'maps' ? 'nav-active' : ''} onClick={() => navigateTo('maps')}>
-              Map Atlas
-            </a>
-          </li>
-          <li>
-            <a className={currentPage === 'quiz' ? 'nav-active' : ''} onClick={() => navigateTo('quiz')}>
-              Quiz
-            </a>
-          </li>
-          <li>
-            <a className={currentPage === 'battles' ? 'nav-active' : ''} onClick={() => navigateTo('battles')}>
-              Battles
-            </a>
-          </li>
+          {NAV_ITEMS.map((item) => (
+            <li key={item.page}>
+              <a className={currentPage === item.page ? 'nav-active' : ''} onClick={() => navigateTo(item.page)}>
+                {item.label}
+              </a>
+            </li>
+          ))}
         </ul>
         <div className="nav-acts">
+          <button className={`nav-menu-btn ${mobileNavOpen ? 'active' : ''}`} onClick={toggleMobileNav} aria-label="Open navigation menu">
+            <span className="nav-menu-line"></span>
+            <span className="nav-menu-line"></span>
+            <span className="nav-menu-line"></span>
+          </button>
           <button
             className="nav-btn"
             id="home-btn"
@@ -1143,6 +1249,25 @@ export default function Home() {
           </button>
         </div>
       </nav>
+
+      <div className={`mobile-nav-shell ${mobileNavPhase}`}>
+        <button className={`mobile-nav-backdrop ${mobileNavPhase}`} onClick={closeMobileNav} aria-label="Close navigation menu"></button>
+        <aside className={`mobile-nav-panel ${mobileNavPhase}`} aria-hidden={mobileNavPhase === 'closed'}>
+          <div className="mobile-nav-eye">Quick Navigation</div>
+          <div className="mobile-nav-title">Bharatam Menu</div>
+          <div className="mobile-nav-list">
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.page}
+                className={`mobile-nav-link ${currentPage === item.page ? 'active' : ''}`}
+                onClick={() => handleMobileNavNavigate(item.page)}
+              >
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </aside>
+      </div>
 
       <div className={`pg ${currentPage === 'home' ? 'act' : ''}`} id="pg-home">
         <div className="hbg"></div>
@@ -1177,13 +1302,6 @@ export default function Home() {
           >
             Founded by Ashutosh Kesari
           </div>
-        </div>
-
-        <div className="home-feature-strip">
-          <div className="home-feature-pill">Next.js image optimization</div>
-          <div className="home-feature-pill">Offline-ready map atlas</div>
-          <div className="home-feature-pill">Timeline and chronology quiz</div>
-          <div className="home-feature-pill">Bookmarks and smart filters</div>
         </div>
 
         <div className="h-cards">
@@ -1460,11 +1578,64 @@ export default function Home() {
           <div className="pg-ttl">Dynasty Timeline</div>
           <div className="pg-sub">A continuous visual ordering of the dynasties currently in the archive.</div>
         </div>
+        {focusedTimelineDynasty && (
+          <section
+            className="timeline-scrubber"
+            onWheel={(event) => {
+              event.preventDefault();
+              updateTimelineFocus(timelineFocusIndex + (event.deltaY > 0 ? 1 : -1));
+            }}
+          >
+            <div className="timeline-scrubber-copy">
+              <div className="timeline-scrubber-eye">Scroll Through Time</div>
+              <h2>{focusedTimelineDynasty.name}</h2>
+              <p>{focusedTimelineDynasty.summary}</p>
+              <div className="timeline-scrubber-meta">
+                <span>{focusedTimelineDynasty.period}</span>
+                <span>{ERA_LABELS[focusedTimelineDynasty.era]}</span>
+                <span>{focusedTimelineDynasty.region}</span>
+              </div>
+            </div>
+            <div className="timeline-scrubber-track">
+              <input
+                className="timeline-scrubber-range"
+                type="range"
+                min="0"
+                max={String(Math.max(0, timelineDynasties.length - 1))}
+                step="1"
+                value={timelineFocusIndex}
+                onChange={(event) => updateTimelineFocus(Number(event.target.value))}
+                aria-label="Timeline scrollbar"
+              />
+              <div className="timeline-scrubber-labels">
+                <span>{timelineDynasties[0]?.period || ''}</span>
+                <span>{focusedTimelineDynasty.period}</span>
+                <span>{timelineDynasties[timelineDynasties.length - 1]?.period || ''}</span>
+              </div>
+              <div className="timeline-scrubber-eras">
+                {['ancient', 'medieval', 'modern']
+                  .filter((era) => timelineDynasties.some((dynasty) => dynasty.era === era))
+                  .map((era) => (
+                    <button
+                      key={era}
+                      className={`timeline-era-chip ${focusedTimelineDynasty.era === era ? 'active' : ''}`}
+                      onClick={() => {
+                        const eraIndex = timelineDynasties.findIndex((dynasty) => dynasty.era === era);
+                        updateTimelineFocus(eraIndex === -1 ? 0 : eraIndex);
+                      }}
+                    >
+                      {ERA_LABELS[era]}
+                    </button>
+                  ))}
+              </div>
+            </div>
+          </section>
+        )}
         <div className="timeline-overview">
-          {filteredDynasties.map((dynasty, index) => (
+          {activeTimelineDynasties.map((dynasty, index) => (
             <article
               key={dynasty.id}
-              className="timeline-overview-card"
+              className={`timeline-overview-card ${dynasty.id === focusedTimelineDynasty?.id ? 'focus' : ''}`}
               style={{ transitionDelay: `${(index * 0.04).toFixed(2)}s` }}
             >
               <div className="timeline-overview-year">{dynasty.period}</div>

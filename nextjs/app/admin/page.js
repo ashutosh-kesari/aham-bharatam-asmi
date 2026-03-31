@@ -164,6 +164,14 @@ export default function Admin() {
   }, []);
 
   useEffect(() => {
+    document.body.classList.add('admin-route');
+
+    return () => {
+      document.body.classList.remove('admin-route');
+    };
+  }, []);
+
+  useEffect(() => {
     if (!supabase) return undefined;
 
     let mounted = true;
