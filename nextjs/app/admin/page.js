@@ -8,6 +8,7 @@ import { getSiteData, saveToSupabase } from '../../lib/supabaseData';
 import { supabase } from '../../lib/supabase';
 
 const STORAGE_KEY = 'bharatam_data';
+const ARTICLE_IMAGE_BUCKET = 'article-images';
 const TABS = ['dynasties', 'battles', 'articles', 'dyks', 'maps', 'quizzes'];
 
 const defaultData = {
@@ -134,8 +135,15 @@ export default function Admin() {
   const [formError, setFormError] = useState('');
   const [articleIndex, setArticleIndex] = useState(0);
   const [ready, setReady] = useState(false);
+  const [session, setSession] = useState(null);
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authStatus, setAuthStatus] = useState('');
+  const [uploadingTarget, setUploadingTarget] = useState('');
   const lastSavedRef = useRef('');
   const suppressAutosaveRef = useRef(true);
+  const canWriteToSupabase = Boolean(supabase && session?.user);
 
   useEffect(() => {
     let active = true;
@@ -152,6 +160,29 @@ export default function Admin() {
 
     return () => {
       active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!supabase) return undefined;
+
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data: sessionData }) => {
+      if (!mounted) return;
+      setSession(sessionData.session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!mounted) return;
+      setSession(nextSession);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -174,10 +205,12 @@ export default function Admin() {
     const timeoutId = setTimeout(async () => {
       localStorage.setItem(STORAGE_KEY, serialized);
 
-      if (supabase) {
+      if (canWriteToSupabase) {
         setSyncStatus('Auto-saving to database...');
         const result = await saveToSupabase(data);
         setSyncStatus(result.success ? 'Auto-saved to database.' : `Autosave failed: ${result.error}`);
+      } else if (supabase) {
+        setSyncStatus('Saved locally. Sign in as admin to sync with Supabase.');
       } else {
         setSyncStatus('Saved locally.');
       }
@@ -186,7 +219,7 @@ export default function Admin() {
     }, 1200);
 
     return () => clearTimeout(timeoutId);
-  }, [data, ready]);
+  }, [canWriteToSupabase, data, ready]);
 
   const currentItems = data[activeTab] || [];
   const selectedArticle = data.articles?.[articleIndex] || null;
@@ -205,10 +238,12 @@ export default function Admin() {
     localStorage.setItem(STORAGE_KEY, serialized);
     lastSavedRef.current = serialized;
 
-    if (supabase) {
+    if (canWriteToSupabase) {
       setSyncStatus('Saving to database...');
       const result = await saveToSupabase(data);
       setSyncStatus(result.success ? 'Saved to database.' : `Error: ${result.error}`);
+    } else if (supabase) {
+      setSyncStatus('Saved locally. Sign in as admin to push changes to Supabase.');
     } else {
       setSyncStatus('Saved locally.');
     }
@@ -237,6 +272,80 @@ export default function Admin() {
         return { ...article, body: nextBody };
       }),
     }));
+  };
+
+  const handleAdminSignIn = async () => {
+    if (!supabase) {
+      setAuthStatus('Supabase is not configured.');
+      return;
+    }
+
+    if (!authEmail.trim() || !authPassword) {
+      setAuthStatus('Enter your admin email and password.');
+      return;
+    }
+
+    setAuthBusy(true);
+    setAuthStatus('Signing in...');
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: authEmail.trim(),
+      password: authPassword,
+    });
+
+    setAuthBusy(false);
+    setAuthStatus(error ? error.message : 'Signed in. Database write access is enabled.');
+  };
+
+  const handleAdminSignOut = async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    setAuthStatus('Signed out. Edits now stay local until you sign in again.');
+  };
+
+  const uploadArticleImage = async (file, target) => {
+    if (!file) return;
+
+    if (!canWriteToSupabase) {
+      setAuthStatus('Sign in as admin before uploading images.');
+      return;
+    }
+
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
+    const filePath = `${session.user.id}/${Date.now()}-${safeName}`;
+
+    setUploadingTarget(target);
+    setAuthStatus('Uploading image to Supabase Storage...');
+
+    const { error } = await supabase.storage.from(ARTICLE_IMAGE_BUCKET).upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false,
+    });
+
+    if (error) {
+      setUploadingTarget('');
+      setAuthStatus(`Upload failed: ${error.message}`);
+      return;
+    }
+
+    const { data: publicUrlData } = supabase.storage.from(ARTICLE_IMAGE_BUCKET).getPublicUrl(filePath);
+    const publicUrl = publicUrlData?.publicUrl || '';
+
+    if (!publicUrl) {
+      setUploadingTarget('');
+      setAuthStatus('Upload completed, but no public URL was returned.');
+      return;
+    }
+
+    if (target === 'hero') {
+      updateArticle({ img: publicUrl });
+    } else if (target.startsWith('block-')) {
+      const blockIndex = Number(target.replace('block-', ''));
+      updateArticleBlock(blockIndex, (current) => ({ ...current, src: publicUrl }));
+    }
+
+    setUploadingTarget('');
+    setAuthStatus('Image uploaded successfully.');
   };
 
   const addArticleBlock = (type) => {
@@ -511,7 +620,9 @@ export default function Admin() {
             New Article
           </button>
         </div>
-        <p style={noteStyle}>Autosaves to local storage and Supabase. For images, paste public image URLs into image blocks.</p>
+        <p style={noteStyle}>
+          Autosaves locally for everyone. Supabase writes and image uploads require admin sign-in.
+        </p>
         <div style={{ display: 'grid', gap: 10 }}>
           {data.articles.map((article, index) => (
             <button
@@ -544,6 +655,19 @@ export default function Admin() {
               <input placeholder="Category" value={selectedArticle.cat || ''} onChange={(e) => updateArticle({ cat: e.target.value })} style={inputStyle} />
               <input placeholder="Subtitle" value={selectedArticle.subtitle || ''} onChange={(e) => updateArticle({ subtitle: e.target.value })} style={inputStyle} />
               <input placeholder="Hero image URL" value={selectedArticle.img || ''} onChange={(e) => updateArticle({ img: e.target.value })} style={inputStyle} />
+              <label style={uploadLabelStyle}>
+                {uploadingTarget === 'hero' ? 'Uploading hero image...' : 'Upload hero image'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    uploadArticleImage(file, 'hero');
+                    event.target.value = '';
+                  }}
+                />
+              </label>
               <input placeholder="Hero image alt text" value={selectedArticle.imgAlt || ''} onChange={(e) => updateArticle({ imgAlt: e.target.value })} style={inputStyle} />
               <textarea placeholder="Excerpt" value={selectedArticle.excerpt || ''} onChange={(e) => updateArticle({ excerpt: e.target.value })} style={{ ...inputStyle, minHeight: 80 }} />
 
@@ -586,6 +710,19 @@ export default function Admin() {
                     {block.type === 'img' && (
                       <>
                         <input placeholder="Image URL" value={block.src || ''} onChange={(e) => updateArticleBlock(blockIndex, (current) => ({ ...current, src: e.target.value }))} style={inputStyle} />
+                        <label style={uploadLabelStyle}>
+                          {uploadingTarget === `block-${blockIndex}` ? 'Uploading block image...' : 'Upload block image'}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            hidden
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              uploadArticleImage(file, `block-${blockIndex}`);
+                              event.target.value = '';
+                            }}
+                          />
+                        </label>
                         <input placeholder="Alt text" value={block.alt || ''} onChange={(e) => updateArticleBlock(blockIndex, (current) => ({ ...current, alt: e.target.value }))} style={inputStyle} />
                         <input placeholder="Caption" value={block.caption || ''} onChange={(e) => updateArticleBlock(blockIndex, (current) => ({ ...current, caption: e.target.value }))} style={{ ...inputStyle, marginBottom: 0 }} />
                       </>
@@ -683,6 +820,46 @@ export default function Admin() {
     <div style={pageStyle}>
       <h1 style={titleStyle}>BHARATAM Admin Panel</h1>
 
+      <div style={authPanelStyle}>
+        <div>
+          <h3 style={{ ...sectionTitleStyle, marginBottom: 8 }}>Admin Access</h3>
+          <p style={{ ...noteStyle, marginBottom: 0 }}>
+            Public visitors can read data. Only signed-in admins should write to Supabase or upload article images.
+          </p>
+        </div>
+        {supabase ? (
+          session?.user ? (
+            <div style={authControlsStyle}>
+              <div style={{ color: '#e8b84b', fontSize: 14 }}>{session.user.email}</div>
+              <button onClick={handleAdminSignOut} style={buttonStyle}>
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <div style={authFormStyle}>
+              <input
+                placeholder="Admin email"
+                value={authEmail}
+                onChange={(event) => setAuthEmail(event.target.value)}
+                style={{ ...inputStyle, marginBottom: 0 }}
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={authPassword}
+                onChange={(event) => setAuthPassword(event.target.value)}
+                style={{ ...inputStyle, marginBottom: 0 }}
+              />
+              <button onClick={handleAdminSignIn} style={buttonStyle} disabled={authBusy}>
+                {authBusy ? 'Signing In...' : 'Admin Sign In'}
+              </button>
+            </div>
+          )
+        ) : (
+          <p style={{ color: '#c04020', margin: 0 }}>Supabase is not configured locally.</p>
+        )}
+      </div>
+
       <div style={tabWrapStyle}>
         {TABS.map((tab) => (
           <button
@@ -745,9 +922,12 @@ export default function Admin() {
       </div>
 
       {syncStatus && <p style={{ textAlign: 'center', color: '#c8942a', fontSize: 14 }}>{syncStatus}</p>}
+      {authStatus && <p style={{ textAlign: 'center', color: '#e8b84b', fontSize: 14 }}>{authStatus}</p>}
       <p style={{ textAlign: 'center', color: '#6a5840', fontSize: 12, marginTop: 10 }}>
-        {supabase
-          ? '✓ Database connected - autosave and manual save both sync to Supabase'
+        {canWriteToSupabase
+          ? '✓ Admin session active - autosave, manual save, and article image uploads sync to Supabase'
+          : supabase
+          ? '✓ Database connected for reads - sign in as admin to sync writes and uploads'
           : '⚠ Database not connected - edits stay local until Supabase is configured'}
       </p>
     </div>
@@ -793,6 +973,29 @@ const panelStyle = {
   padding: '20px',
   border: '1px solid rgba(200,148,42,0.3)',
   background: 'rgba(13,10,5,0.8)',
+};
+
+const authPanelStyle = {
+  maxWidth: '1100px',
+  margin: '0 auto 30px',
+  padding: '20px',
+  border: '1px solid rgba(200,148,42,0.3)',
+  background: 'rgba(13,10,5,0.8)',
+  display: 'grid',
+  gridTemplateColumns: '1.3fr 1fr',
+  gap: '16px',
+  alignItems: 'center',
+};
+
+const authFormStyle = {
+  display: 'grid',
+  gap: '10px',
+};
+
+const authControlsStyle = {
+  display: 'grid',
+  gap: '10px',
+  justifyItems: 'start',
 };
 
 const sectionTitleStyle = {
@@ -915,6 +1118,19 @@ const blockToolbarStyle = {
 const smallButtonStyle = {
   padding: '8px 10px',
   background: 'transparent',
+  border: '1px solid rgba(200,148,42,0.3)',
+  color: '#c8942a',
+  cursor: 'pointer',
+  fontSize: '12px',
+};
+
+const uploadLabelStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '10px 12px',
+  marginBottom: '10px',
+  background: 'rgba(200,148,42,0.08)',
   border: '1px solid rgba(200,148,42,0.3)',
   color: '#c8942a',
   cursor: 'pointer',

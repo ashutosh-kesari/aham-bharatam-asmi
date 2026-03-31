@@ -112,10 +112,62 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 npm run dev
 ```
 
+### Step 5: Create an admin user
+Open **Authentication → Users** and create your admin account, or enable email/password sign-up and create one manually.
+
+### Step 6: Tighten write access for production
+Replace open write rules with authenticated admin-only write rules:
+
+```sql
+drop policy if exists "Public write dynasties" on dynasties;
+drop policy if exists "Public write battles" on battles;
+drop policy if exists "Public write articles" on articles;
+drop policy if exists "Public write facts" on facts;
+drop policy if exists "Public write maps" on maps;
+drop policy if exists "Public write quizzes" on quizzes;
+
+create policy "Authenticated write dynasties" on dynasties
+for all using (auth.uid() is not null) with check (auth.uid() is not null);
+
+create policy "Authenticated write battles" on battles
+for all using (auth.uid() is not null) with check (auth.uid() is not null);
+
+create policy "Authenticated write articles" on articles
+for all using (auth.uid() is not null) with check (auth.uid() is not null);
+
+create policy "Authenticated write facts" on facts
+for all using (auth.uid() is not null) with check (auth.uid() is not null);
+
+create policy "Authenticated write maps" on maps
+for all using (auth.uid() is not null) with check (auth.uid() is not null);
+
+create policy "Authenticated write quizzes" on quizzes
+for all using (auth.uid() is not null) with check (auth.uid() is not null);
+```
+
+### Step 7: Create a Storage bucket for article images
+Open **Storage** and create a public bucket named `article-images`.
+
+Then add policies so anyone can read uploaded article images, but only signed-in admins can upload:
+
+```sql
+create policy "Public read article images" on storage.objects
+for select using (bucket_id = 'article-images');
+
+create policy "Authenticated upload article images" on storage.objects
+for insert to authenticated with check (bucket_id = 'article-images');
+
+create policy "Authenticated update article images" on storage.objects
+for update to authenticated using (bucket_id = 'article-images') with check (bucket_id = 'article-images');
+
+create policy "Authenticated delete article images" on storage.objects
+for delete to authenticated using (bucket_id = 'article-images');
+```
+
 ### Important notes
-- The admin panel already writes directly to Supabase once these tables and env vars exist.
-- Article images inside the editor currently use public image URLs. If you want direct uploads later, add a Supabase Storage bucket and wire an uploader into the admin panel.
-- The current write policies are intentionally open for simplicity. Before going public, tighten them with authenticated admin-only policies.
+- The admin panel now reads with the publishable key, but writes to Supabase only after admin sign-in.
+- Article hero images and inline article images can now upload directly to the `article-images` bucket from `/admin`.
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` is the env var used by the current app, though `NEXT_PUBLIC_SUPABASE_ANON_KEY` still works as a fallback.
 
 ## Local-only fallback
 
