@@ -74,6 +74,8 @@ export default function Home() {
   });
   const [currentPage, setCurrentPage] = useState('home');
   const [showDyk, setShowDyk] = useState(false);
+  const [dykDismissed, setDykDismissed] = useState(false);
+  const [dykFading, setDykFading] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -121,6 +123,7 @@ export default function Home() {
   const draggedRulerIndex = useRef(null);
   const mobileNavTimerRef = useRef(null);
   const chatTimerRef = useRef(null);
+  const dykTimerRef = useRef(null);
 
   const allDynasties = buildAllDynasties(siteData);
   const favoriteDynasties = allDynasties.filter((dynasty) => favorites.includes(dynasty.id));
@@ -219,11 +222,11 @@ export default function Home() {
   const navigateTo = useCallback(
     (page) => {
       setCurrentPage(page);
-      if (page !== 'home' && !showDyk) {
+      if (page !== 'home' && !showDyk && !dykDismissed) {
         setTimeout(() => setShowDyk(true), 500);
       }
     },
-    [showDyk],
+    [showDyk, dykDismissed],
   );
 
   const handleDynastyClick = useCallback(
@@ -493,6 +496,30 @@ export default function Home() {
     },
     [],
   );
+
+  // Auto-rotate DYK fact every 7 seconds with fade transition
+  useEffect(() => {
+    if (!showDyk || dykDismissed) return undefined;
+
+    const dyks = siteData.DYKS?.length ? siteData.DYKS : DYKS;
+    if (dyks.length <= 1) return undefined;
+
+    dykTimerRef.current = setInterval(() => {
+      // fade out
+      setDykFading(true);
+      setTimeout(() => {
+        setDykText((current) => {
+          const currentIndex = dyks.indexOf(current);
+          const nextIndex = (currentIndex + 1) % dyks.length;
+          return dyks[nextIndex];
+        });
+        // fade back in
+        setDykFading(false);
+      }, 400);
+    }, 7000);
+
+    return () => clearInterval(dykTimerRef.current);
+  }, [showDyk, dykDismissed, siteData.DYKS]);
 
   const submitQuizChoice = (option) => {
     if (!currentQuiz) return;
@@ -1212,12 +1239,19 @@ export default function Home() {
         </div>
       )}
 
-      <div className={`dyk ${showDyk ? 'on' : ''}`} id="dyk">
-        <button className="dyk-x" onClick={() => setShowDyk(false)}>
+      <div className={`dyk ${showDyk && !dykDismissed ? 'on' : ''}`} id="dyk">
+        <button
+          className="dyk-x"
+          onClick={() => {
+            clearInterval(dykTimerRef.current);
+            setShowDyk(false);
+            setDykDismissed(true);
+          }}
+        >
           ✕
         </button>
         <div className="dyk-lb">⚡ Did You Know?</div>
-        <div className="dyk-tx" id="dyk-tx">
+        <div className={`dyk-tx${dykFading ? ' fading' : ''}`} id="dyk-tx">
           {dykText || (isMounted ? DYKS[0] : '')}
         </div>
       </div>

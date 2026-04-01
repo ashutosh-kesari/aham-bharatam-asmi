@@ -1139,7 +1139,8 @@ body::after {
 }
 .dyk.on { opacity:1; transform:translateY(0); pointer-events:all; }
 .dyk-lb { font-family:'Cinzel', serif; font-size:.5rem; letter-spacing:.38em; color:var(--saffron); text-transform:uppercase; margin-bottom:6px; }
-.dyk-tx { font-size:.77rem; color:var(--text2); line-height:1.55; font-style:italic; }
+.dyk-tx { font-size:.77rem; color:var(--text2); line-height:1.55; font-style:italic; transition:opacity .4s ease; }
+.dyk-tx.fading { opacity:0; }
 .dyk-x  { position:absolute; top:8px; right:10px; background:none; border:none; color:var(--text3); font-size:.82rem; cursor:pointer; transition:color .2s; }
 .dyk-x:hover { color:var(--gold); }
 
