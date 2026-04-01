@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { DYN, BATTLES, ARTICLES, DYKS, BATTLE_IMAGES } from '../lib/data';
 import { getSiteData } from '../lib/supabaseData';
 import { enrichDynasty, getDynastyHref, ERA_LABELS } from '../lib/dynastyUtils';
@@ -18,7 +18,6 @@ const MAP_FILTERS = ['all', 'ancient', 'medieval', 'modern'];
 const NAV_ITEMS = [
   { page: 'history', label: 'History & Power' },
   { page: 'dynasties', label: 'Dynasties' },
-  { page: 'timeline', label: 'Timeline' },
   { page: 'maps', label: 'Map Atlas' },
   { page: 'quiz', label: 'Quiz' },
   { page: 'battles', label: 'Battles' },
@@ -112,7 +111,7 @@ export default function Home() {
         'Ask about a dynasty, battle, map, quiz, or any Indian or world history topic. If it is not in Bharatam, I will fetch a short answer from the web.',
     },
   ]);
-  const cursorRef = useRef({ x: 0, y: 0, rx: 0, ry: 0 });
+  const cursorRef = useRef({ x: -200, y: -200, rx: -200, ry: -200 });
   const audioRef = useRef(null);
   const timelineTickAudioRef = useRef(null);
   const timelinePageRef = useRef(null);
@@ -125,7 +124,11 @@ export default function Home() {
 
   const allDynasties = buildAllDynasties(siteData);
   const favoriteDynasties = allDynasties.filter((dynasty) => favorites.includes(dynasty.id));
-  const filteredDynasties = getFilteredDynasties(allDynasties, selectedEraFilter, selectedRegionFilter);
+  const filteredDynasties = useMemo(
+    () => getFilteredDynasties(allDynasties, selectedEraFilter, selectedRegionFilter),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedEraFilter, selectedRegionFilter, siteData],
+  );
   const mapData = siteData.MAPS?.length ? siteData.MAPS : HISTORICAL_MAPS;
   const quizQuestions = siteData.QUIZZES?.length ? siteData.QUIZZES : DEFAULT_QUIZ_QUESTIONS;
   const dynastiesByEra = ERA_KEYS.reduce((accumulator, era) => {
@@ -133,7 +136,10 @@ export default function Home() {
     return accumulator;
   }, {});
   const filteredMaps = mapData.filter((map) => selectedMapFilter === 'all' || map.era === selectedMapFilter);
-  const timelineDynasties = [...filteredDynasties].sort((left, right) => left.sortYear - right.sortYear);
+  const timelineDynasties = useMemo(
+    () => [...filteredDynasties].sort((left, right) => left.sortYear - right.sortYear),
+    [filteredDynasties],
+  );
   const focusedTimelineDynasty = timelineDynasties[timelineFocusIndex] || timelineDynasties[0] || null;
   const timelineQuizPool = getTimelineQuizPool(allDynasties);
   const currentQuiz = quizQuestions[quizIndex] || quizQuestions[0] || null;

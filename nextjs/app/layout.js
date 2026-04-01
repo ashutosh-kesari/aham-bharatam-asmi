@@ -61,6 +61,34 @@ export const viewport = {
   themeColor: '#070604',
 };
 
+const cursorScript = `(function(){
+  if(window.matchMedia('(hover:none)').matches) return;
+  var x=-200,y=-200,rx=-200,ry=-200,dot,ring;
+  function init(){
+    dot=document.getElementById('cdot');
+    ring=document.getElementById('cring');
+    if(!dot||!ring) return;
+    document.addEventListener('mousemove',function(e){
+      x=e.clientX; y=e.clientY;
+    },{passive:true});
+    document.addEventListener('mouseover',function(e){
+      if(!ring) return;
+      var t=e.target.closest('a,button,[data-page],.dc,.bc,.rel-c,.hp-card,.other-dyn-card,.map-card,.quiz-option');
+      if(t){ ring.style.width='46px'; ring.style.height='46px'; ring.style.borderColor='rgba(200,148,42,0.85)'; }
+      else { ring.style.width='32px'; ring.style.height='32px'; ring.style.borderColor='rgba(200,148,42,0.5)'; }
+    });
+    (function loop(){
+      if(dot) dot.style.transform='translate3d('+x+'px,'+y+'px,0) translate(-50%,-50%)';
+      rx+=(x-rx)*0.18; ry+=(y-ry)*0.18;
+      if(ring) ring.style.transform='translate3d('+rx+'px,'+ry+'px,0) translate(-50%,-50%)';
+      requestAnimationFrame(loop);
+    })();
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',init);
+  } else { init(); }
+})();`;
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
@@ -74,7 +102,7 @@ export default function RootLayout({ children }) {
         <canvas id="cvs"></canvas>
         <div className="c-dot" id="cdot"></div>
         <div className="c-ring" id="cring"></div>
-        
+        <script dangerouslySetInnerHTML={{ __html: cursorScript }} />
         <Suspense fallback={null}>
           {children}
         </Suspense>
