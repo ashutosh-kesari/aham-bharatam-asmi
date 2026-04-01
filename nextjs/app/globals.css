@@ -105,6 +105,8 @@ body::after {
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--bg);
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 .pg.act {
   display: block;
@@ -510,6 +512,7 @@ body::after {
 }
 .ico-d { background:radial-gradient(ellipse at 50% 80%,rgba(120,80,10,.4),transparent 70%),#0d0904; }
 .ico-b { background:radial-gradient(ellipse at 50% 80%,rgba(120,30,10,.4),transparent 70%),#0a0404; }
+.ico-h { background:radial-gradient(ellipse at 50% 80%,rgba(10,80,120,.4),transparent 70%),#040a0d; }
 
 .h-card-body { padding:10px 13px 14px; }
 .h-card-ttl {
@@ -574,9 +577,21 @@ body::after {
     padding: 20px 16px 32px;
     gap: 12px;
   }
-  .h-card { width:100%; max-width:400px; }
+  /* Force cards visible on mobile — intersection observer may not fire */
+  .h-card {
+    width: 100%;
+    max-width: 100%;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .h-card-inner { touch-action: manipulation; }
   .h-card-ico { height:80px; font-size:2rem; }
+  .h-card-ttl { font-size:.72rem; }
+  .h-card-dsc { font-size:.75rem; }
+  .h-card-cta { font-size:.58rem; }
   .s-cue { display:none; }
+  /* Hide DYK on mobile */
+  .dyk { display:none !important; }
 }
 
 /* ===== DYNASTIES PAGE ===== */
@@ -1793,4 +1808,103 @@ body::after {
     transform:translateY(-12px) scaleX(.16) scaleY(.08);
     clip-path:inset(0 0 96% 0 round 24px);
   }
+}
+
+/* ═══════════════════════════════════════════
+   MOBILE GLOBAL OPTIMISATION
+   ─────────────────────────────────────────── */
+@media (max-width:600px) {
+
+  /* ── Scrolling ── */
+  /* All pages must scroll on iOS (position:fixed + overflow:auto) */
+  .pg {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    /* Ensure enough bottom padding so chat button doesn't cover content */
+    padding-bottom: 80px;
+  }
+
+  /* Give inner page content room to breathe at bottom */
+  .era-wrap,
+  .hp-grid,
+  .map-grid,
+  .quiz-layout,
+  .bt-grid,
+  .timeline-overview,
+  .art-lay {
+    padding-bottom: 88px !important;
+  }
+
+  /* ── Tap targets ── */
+  button, [role="button"], a,
+  .dc, .bc, .rel-c, .hp-card,
+  .other-dyn-card, .map-card,
+  .quiz-option, .h-card {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 44px;
+  }
+
+  /* ── No hover animations on touch ── */
+  .h-card:hover .h-card-inner { transform: none; }
+  .hp-card:hover { transform: none; }
+  .dc:hover { transform: none; }
+  .bc:hover { transform: none; }
+
+  /* ── Chat / DYK positioning on small screens ── */
+  .chat-shell {
+    right: 12px;
+    bottom: 12px;
+  }
+  .chat-panel {
+    width: calc(100vw - 24px);
+    max-height: 70vh;
+  }
+  .chat-messages {
+    max-height: 45vh;
+  }
+
+  /* ── Dynasty grid single column ── */
+  .d-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* ── Battle grid single column ── */
+  .bt-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* ── Map grid single column ── */
+  .map-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* ── Quiz layout single column ── */
+  .quiz-layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* ── Article layout ── */
+  .art-lay {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* ── History & Power grid ── */
+  .hp-grid {
+    grid-template-columns: 1fr;
+    padding-left: 16px;
+    padding-right: 16px;
+    gap: 16px;
+  }
+
+  /* ── Battle detail layout ── */
+  .bd-lay { grid-template-columns: 1fr; }
+}
+
+/* Landscape phone */
+@media (max-height: 500px) and (max-width: 900px) {
+  .hero-wrap { min-height: unset; padding-top: calc(var(--nav-h) + 16px); }
+  .h-cards { padding-bottom: 16px; }
+  .pg { padding-bottom: 60px; }
 }
