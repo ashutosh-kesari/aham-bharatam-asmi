@@ -27,13 +27,13 @@
 /* ===== RESET ===== */
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
-html { font-size:16px; overflow-x:hidden; }
+html { font-size:16px; overflow-x:clip; }
 
 body {
   background: var(--bg);
   color: var(--text);
   font-family: 'Crimson Pro', 'Cormorant Garamond', Georgia, serif;
-  overflow-x: hidden;
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   cursor: none;
@@ -98,15 +98,17 @@ body::after {
 /* Page system — full viewport, stacked */
 .pg {
   display: none;
-  min-height: 100vh;
   position: fixed;
   inset: 0;
   z-index: 10;
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--bg);
+  /* Android Chrome: must declare touch-action for fixed scroll containers */
+  touch-action: pan-y;
+  /* iOS momentum scrolling */
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: contain;
 }
 .pg.act {
   display: block;
