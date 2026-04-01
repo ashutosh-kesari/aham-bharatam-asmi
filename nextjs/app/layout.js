@@ -63,26 +63,35 @@ export const viewport = {
 
 const cursorScript = `(function(){
   if(window.matchMedia('(hover:none)').matches) return;
-  var x=-200,y=-200,rx=-200,ry=-200,dot,ring;
+  var x=-200,y=-200,rx=-200,ry=-200,dot,ring,raf;
   function init(){
     dot=document.getElementById('cdot');
     ring=document.getElementById('cring');
     if(!dot||!ring) return;
+    dot.style.willChange='transform';
+    ring.style.willChange='transform';
     document.addEventListener('mousemove',function(e){
       x=e.clientX; y=e.clientY;
+      /* Dot follows instantly — no lerp, zero perceived lag */
+      dot.style.transform='translate3d('+x+'px,'+y+'px,0) translate(-50%,-50%)';
     },{passive:true});
     document.addEventListener('mouseover',function(e){
       if(!ring) return;
       var t=e.target.closest('a,button,[data-page],.dc,.bc,.rel-c,.hp-card,.other-dyn-card,.map-card,.quiz-option');
-      if(t){ ring.style.width='46px'; ring.style.height='46px'; ring.style.borderColor='rgba(200,148,42,0.85)'; }
-      else { ring.style.width='32px'; ring.style.height='32px'; ring.style.borderColor='rgba(200,148,42,0.5)'; }
+      if(t){ ring.style.width='46px'; ring.style.height='46px'; ring.style.borderColor='rgba(200,148,42,0.9)'; }
+      else  { ring.style.width='32px'; ring.style.height='32px'; ring.style.borderColor='rgba(200,148,42,0.55)'; }
     });
-    (function loop(){
-      if(dot) dot.style.transform='translate3d('+x+'px,'+y+'px,0) translate(-50%,-50%)';
-      rx+=(x-rx)*0.18; ry+=(y-ry)*0.18;
-      if(ring) ring.style.transform='translate3d('+rx+'px,'+ry+'px,0) translate(-50%,-50%)';
-      requestAnimationFrame(loop);
-    })();
+    var prev=0;
+    (function loop(ts){
+      raf=requestAnimationFrame(loop);
+      var dt=ts-prev; prev=ts;
+      /* Clamp dt so a tab-switch spike doesn't teleport the ring */
+      if(dt>64) dt=16;
+      /* Frame-rate-independent lerp: factor 0.28 at 60 fps */
+      var k=1-Math.pow(1-0.28, dt/16.667);
+      rx+=( x-rx)*k; ry+=(y-ry)*k;
+      ring.style.transform='translate3d('+rx+'px,'+ry+'px,0) translate(-50%,-50%)';
+    })(0);
   }
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',init);

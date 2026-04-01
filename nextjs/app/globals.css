@@ -1139,7 +1139,8 @@ body::after {
 }
 .dyk.on { opacity:1; transform:translateY(0); pointer-events:all; }
 .dyk-lb { font-family:'Cinzel', serif; font-size:.5rem; letter-spacing:.38em; color:var(--saffron); text-transform:uppercase; margin-bottom:6px; }
-.dyk-tx { font-size:.77rem; color:var(--text2); line-height:1.55; font-style:italic; }
+.dyk-tx { font-size:.77rem; color:var(--text2); line-height:1.55; font-style:italic; transition:opacity .4s ease; }
+.dyk-tx.fading { opacity:0; }
 .dyk-x  { position:absolute; top:8px; right:10px; background:none; border:none; color:var(--text3); font-size:.82rem; cursor:pointer; transition:color .2s; }
 .dyk-x:hover { color:var(--gold); }
 
@@ -1224,6 +1225,42 @@ body::after {
 }
 .chat-message.user {
   background:rgba(224,115,24,.12); color:var(--text); border-top-right-radius:6px;
+}
+.chat-message.pending {
+  opacity:.7; animation:chatPulse 1.4s ease-in-out infinite;
+}
+@keyframes chatPulse {
+  0%,100% { opacity:.7; } 50% { opacity:1; }
+}
+.chat-message-text { margin:0 0 0 0; }
+.chat-sources {
+  margin-top:10px; padding-top:10px;
+  border-top:1px solid rgba(200,148,42,.14);
+}
+.chat-sources-label {
+  font-family:'Cinzel', serif; font-size:.5rem; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--saffron); display:block; margin-bottom:8px;
+}
+.chat-sources-list {
+  list-style:none; margin:0; padding:0; display:grid; gap:6px;
+}
+.chat-source-item { display:block; }
+.chat-source-link {
+  display:block; padding:8px 10px;
+  border:1px solid rgba(200,148,42,.14); border-radius:8px;
+  background:rgba(7,6,4,.6); text-decoration:none;
+  transition:border-color .25s, background .25s;
+}
+.chat-source-link:hover {
+  border-color:rgba(200,148,42,.5); background:rgba(200,148,42,.07);
+}
+.chat-source-title {
+  display:block; font-family:'Cinzel', serif; font-size:.62rem;
+  letter-spacing:.06em; color:var(--gold-lt); margin-bottom:3px; line-height:1.3;
+}
+.chat-source-snippet {
+  display:block; font-size:.75rem; color:var(--text3); line-height:1.5;
+  overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical;
 }
 .chat-quick-actions {
   display:flex; gap:12px; flex-wrap:wrap; padding:0 16px 12px;

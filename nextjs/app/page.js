@@ -74,6 +74,8 @@ export default function Home() {
   });
   const [currentPage, setCurrentPage] = useState('home');
   const [showDyk, setShowDyk] = useState(false);
+  const [dykDismissed, setDykDismissed] = useState(false);
+  const [dykFading, setDykFading] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -121,6 +123,7 @@ export default function Home() {
   const draggedRulerIndex = useRef(null);
   const mobileNavTimerRef = useRef(null);
   const chatTimerRef = useRef(null);
+  const dykTimerRef = useRef(null);
 
   const allDynasties = buildAllDynasties(siteData);
   const favoriteDynasties = allDynasties.filter((dynasty) => favorites.includes(dynasty.id));
@@ -219,11 +222,11 @@ export default function Home() {
   const navigateTo = useCallback(
     (page) => {
       setCurrentPage(page);
-      if (page !== 'home' && !showDyk) {
+      if (page !== 'home' && !showDyk && !dykDismissed) {
         setTimeout(() => setShowDyk(true), 500);
       }
     },
-    [showDyk],
+    [showDyk, dykDismissed],
   );
 
   const handleDynastyClick = useCallback(
@@ -426,7 +429,7 @@ export default function Home() {
     setChatLoading(true);
     setChatMessages((current) => [
       ...current,
-      { id: pendingId, role: 'assistant', text: 'No directory found, fetching from the web: ...', pending: true },
+      { id: pendingId, role: 'assistant', text: '🔍 Searching the web...', pending: true, sources: [] },
     ]);
 
     try {
@@ -435,12 +438,13 @@ export default function Home() {
       const answer =
         response.ok && typeof data?.answer === 'string'
           ? data.answer
-          : 'No directory found, fetching from the web: I could not fetch a short answer right now.';
+          : 'I could not fetch a short answer right now. Please try again.';
+      const sources = response.ok && Array.isArray(data?.sources) ? data.sources : [];
 
       setChatMessages((current) =>
         current.map((message) =>
           message.id === pendingId
-            ? { ...message, text: answer, pending: false }
+            ? { ...message, text: answer, sources, pending: false }
             : message,
         ),
       );
@@ -450,7 +454,8 @@ export default function Home() {
           message.id === pendingId
             ? {
                 ...message,
-                text: 'No directory found, fetching from the web: I could not fetch a short answer right now.',
+                text: 'I encountered an error fetching web results. Please try again.',
+                sources: [],
                 pending: false,
               }
             : message,
@@ -491,6 +496,30 @@ export default function Home() {
     },
     [],
   );
+
+  // Auto-rotate DYK fact every 7 seconds with fade transition
+  useEffect(() => {
+    if (!showDyk || dykDismissed) return undefined;
+
+    const dyks = siteData.DYKS?.length ? siteData.DYKS : DYKS;
+    if (dyks.length <= 1) return undefined;
+
+    dykTimerRef.current = setInterval(() => {
+      // fade out
+      setDykFading(true);
+      setTimeout(() => {
+        setDykText((current) => {
+          const currentIndex = dyks.indexOf(current);
+          const nextIndex = (currentIndex + 1) % dyks.length;
+          return dyks[nextIndex];
+        });
+        // fade back in
+        setDykFading(false);
+      }, 400);
+    }, 7000);
+
+    return () => clearInterval(dykTimerRef.current);
+  }, [showDyk, dykDismissed, siteData.DYKS]);
 
   const submitQuizChoice = (option) => {
     if (!currentQuiz) return;
@@ -1210,12 +1239,19 @@ export default function Home() {
         </div>
       )}
 
-      <div className={`dyk ${showDyk ? 'on' : ''}`} id="dyk">
-        <button className="dyk-x" onClick={() => setShowDyk(false)}>
+      <div className={`dyk ${showDyk && !dykDismissed ? 'on' : ''}`} id="dyk">
+        <button
+          className="dyk-x"
+          onClick={() => {
+            clearInterval(dykTimerRef.current);
+            setShowDyk(false);
+            setDykDismissed(true);
+          }}
+        >
           ✕
         </button>
         <div className="dyk-lb">⚡ Did You Know?</div>
-        <div className="dyk-tx" id="dyk-tx">
+        <div className={`dyk-tx${dykFading ? ' fading' : ''}`} id="dyk-tx">
           {dykText || (isMounted ? DYKS[0] : '')}
         </div>
       </div>
@@ -1233,8 +1269,23 @@ export default function Home() {
           </div>
           <div className="chat-messages">
             {chatMessages.map((message, index) => (
-              <div key={`${message.role}-${index}`} className={`chat-message ${message.role}`}>
-                {message.text}
+              <div key={`${message.role}-${index}`} className={`chat-message ${message.role}${message.pending ? ' pending' : ''}`}>
+                <p className="chat-message-text">{message.text}</p>
+                {Array.isArray(message.sources) && message.sources.length > 0 && (
+                  <div className="chat-sources">
+                    <span className="chat-sources-label">🌐 Sources</span>
+                    <ul className="chat-sources-list">
+                      {message.sources.map((src, si) => (
+                        <li key={si} className="chat-source-item">
+                          <a href={src.url} target="_blank" rel="noopener noreferrer" className="chat-source-link">
+                            <span className="chat-source-title">{src.title}</span>
+                            {src.snippet && <span className="chat-source-snippet">{src.snippet}</span>}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             ))}
           </div>
