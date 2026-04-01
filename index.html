@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>BHARATAM ASMI – The Chronicles of India</title>
+
+  <!-- PWA / Home Screen -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#070604" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="BHARATAM" />
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png" />
+
+  <!-- SEO -->
+  <meta name="description" content="Echoes of a Civilization that Shaped Time — explore India's dynasties, battles, and history." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
+
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/reset.css" />
+  <link rel="stylesheet" href="css/nav.css" />
+  <link rel="stylesheet" href="css/home.css" />
+  <link rel="stylesheet" href="css/dynasties.css" />
+  <link rel="stylesheet" href="css/chronology.css" />
+  <link rel="stylesheet" href="css/battles.css" />
+  <link rel="stylesheet" href="css/battle-detail.css" />
+  <link rel="stylesheet" href="css/components.css" />
+
+  <style>
+    /* ── Readable body font for all content text ── */
+    .tl-dc, .bd-sb, .bmi-vl, .dc-sg, .bc-sm,
+    .art-body p, .art-body li, .hp-card-excerpt, .hp-sub, .other-dyn-sub {
+      font-family: 'Crimson Pro', 'Cormorant Garamond', Georgia, serif;
+      font-size: 1.04rem;
+      font-style: normal;
+      line-height: 1.82;
+      letter-spacing: 0.01em;
+    }
+    .tl-dc  { color: var(--text2); font-size: 1.0rem; }
+    .bd-sb  { font-size: 1.06rem; color: var(--text2); }
+    .bmi-vl { font-size: 0.96rem; }
+    .dc-sg  { font-size: 0.97rem; font-style: italic; color: var(--text2); line-height: 1.65; }
+    .bc-sm  { font-size: 0.97rem; }
+
+    /* ── Third home card icon ── */
+    .ico-h { background: radial-gradient(ellipse at 50% 30%, rgba(200,148,42,.15), transparent 70%); }
+
+    /* ════════════════════════════
+       SEARCH SPOTLIGHT OVERLAY
+    ════════════════════════════ */
+    #search-overlay {
+      position: fixed; inset: 0; z-index: 9000;
+    }
+    #search-backdrop {
+      position: absolute; inset: 0;
+      backdrop-filter: blur(18px) brightness(0.35) saturate(0.7);
+      background: rgba(4,3,2,.55);
+    }
+    #search-modal {
+      position: absolute;
+      top: clamp(80px, 12vh, 140px);
+      left: 50%; transform: translateX(-50%);
+      width: min(680px, calc(100vw - 32px));
+      z-index: 1;
+      animation: searchIn .22s cubic-bezier(.22,1,.36,1) both;
+    }
+    @keyframes searchIn {
+      from { opacity:0; transform:translateX(-50%) translateY(-16px) scale(.97); }
+      to   { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
+    }
+    #search-box-wrap {
+      display: flex; align-items: center;
+      background: rgba(18,14,8,.97);
+      border: 1px solid var(--gold);
+      box-shadow: 0 0 60px rgba(200,148,42,.22), 0 24px 60px rgba(0,0,0,.7);
+      padding: 14px 18px; gap: 12px;
+    }
+    #search-icon {
+      font-size: 1.1rem; color: var(--gold); opacity: .8; flex-shrink: 0;
+    }
+    #search-input {
+      flex: 1; background: transparent; border: none; outline: none;
+      font-family: 'Cinzel', serif; font-size: .9rem;
+      letter-spacing: .08em; color: var(--gold-pl);
+      caret-color: var(--gold);
+    }
+    #search-input::placeholder { color: var(--text3); }
+    #search-close {
+      background: transparent; border: none; cursor: pointer;
+      color: var(--text3); font-size: .9rem; padding: 4px 6px;
+      transition: color .2s; flex-shrink: 0;
+    }
+    #search-close:hover { color: var(--gold); }
+    #search-results {
+      background: rgba(13,10,5,.98);
+      border: 1px solid var(--bg-gold); border-top: none;
+      max-height: 360px; overflow-y: auto;
+    }
+    .sr-item {
+      padding: 13px 20px; cursor: pointer; display: flex;
+      align-items: center; gap: 14px;
+      border-bottom: 1px solid rgba(200,148,42,.06);
+      transition: background .2s;
+    }
+    .sr-item:last-child { border-bottom: none; }
+    .sr-item:hover { background: rgba(200,148,42,.07); }
+    .sr-tag {
+      font-family: 'Cinzel', serif; font-size: .45rem;
+      letter-spacing: .22em; color: var(--saffron);
+      text-transform: uppercase; white-space: nowrap;
+      border: 1px solid rgba(224,115,24,.3); padding: 2px 6px;
+      flex-shrink: 0;
+    }
+    .sr-name {
+      font-family: 'Cinzel', serif; font-size: .78rem;
+      color: var(--gold-lt); line-height: 1.3;
+    }
+    .sr-desc {
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-size: .88rem; color: var(--text3); margin-top: 2px; line-height: 1.4;
+    }
+    .sr-empty {
+      padding: 24px 20px; text-align: center;
+      font-family: 'Cinzel', serif; font-size: .65rem;
+      letter-spacing: .18em; color: var(--text3);
+    }
+    #search-hint {
+      font-family: 'Cinzel', serif; font-size: .48rem;
+      letter-spacing: .18em; color: var(--text3);
+      text-align: center; padding: 10px 0 0;
+      text-transform: uppercase;
+    }
+    #search-hint kbd {
+      border: 1px solid var(--text3); padding: 1px 5px;
+      border-radius: 3px; font-family: inherit;
+    }
+    .s-cue {
+      position: relative !important;
+      bottom: auto !important;
+      left: auto !important;
+      transform: none !important;
+      text-align: center;
+      padding: 10px 0 36px;
+      z-index: 20;
+    }
+
+    /* ════════════════════════════
+       HISTORY & POWER PAGE
+    ════════════════════════════ */
+    #pg-history { padding-top: var(--nav-h); }
+    .hp-hdr {
+      text-align: center;
+      padding: clamp(40px,6vw,80px) 24px clamp(20px,3vw,40px);
+    }
+    .hp-eye {
+      font-family: 'Cinzel', serif; font-size: .6rem;
+      letter-spacing: .46em; color: var(--saffron);
+      text-transform: uppercase; margin-bottom: 10px;
+    }
+    .hp-ttl {
+      font-family: 'Cinzel Decorative', serif; font-weight: 900;
+      font-size: clamp(1.6rem, 4vw, 3rem);
+      background: linear-gradient(135deg, var(--gold-dk), var(--gold-lt), var(--gold-pl));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 14px;
+    }
+    .hp-sub {
+      font-size: 1.05rem; color: var(--text2);
+      max-width: 640px; margin: 0 auto;
+      font-style: italic; line-height: 1.72;
+    }
+    .hp-divider {
+      display: flex; align-items: center; justify-content: center;
+      gap: 16px; padding: 8px 0 28px;
+    }
+    .hp-divider-ln { width: 80px; height: 1px; background: var(--bg-gold); }
+    .hp-divider-dia { width: 6px; height: 6px; background: var(--gold); transform: rotate(45deg); }
+
+    .hp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 24px;
+      padding: 0 clamp(16px,4vw,60px) clamp(40px,6vw,80px);
+      max-width: 1280px; margin: 0 auto;
+    }
+    .hp-card {
+      border: 1px solid var(--bg-gold);
+      background: rgba(13,10,5,.88);
+      cursor: pointer; overflow: hidden;
+      transition: border-color .3s, box-shadow .3s, transform .3s;
+      opacity: 0; transform: translateY(24px);
+    }
+    .hp-card.vis {
+      opacity: 1; transform: translateY(0);
+      transition: opacity .5s ease, transform .5s ease, border-color .3s, box-shadow .3s;
+    }
+    .hp-card:hover {
+      border-color: var(--gold);
+      box-shadow: 0 0 32px rgba(200,148,42,.2);
+      transform: translateY(-4px);
+    }
+    .hp-card-img {
+      width: 100%; height: 196px; object-fit: cover;
+      display: block; filter: brightness(.72) saturate(.88);
+      transition: filter .4s, transform .4s;
+    }
+    .hp-card:hover .hp-card-img { filter: brightness(.88) saturate(1.0); transform: scale(1.03); }
+    .hp-card-img-wrap { overflow: hidden; }
+    .hp-card-body { padding: 20px 22px 22px; }
+    .hp-card-cat {
+      font-family: 'Cinzel', serif; font-size: .51rem;
+      letter-spacing: .3em; color: var(--saffron);
+      text-transform: uppercase; margin-bottom: 7px;
+    }
+    .hp-card-title {
+      font-family: 'Cinzel', serif; font-size: .98rem;
+      color: var(--gold-lt); margin-bottom: 10px; line-height: 1.3;
+    }
+    .hp-card-excerpt {
+      font-size: .97rem; color: var(--text2);
+      line-height: 1.72; margin-bottom: 16px;
+    }
+    .hp-card-cta {
+      font-family: 'Cinzel', serif; font-size: .52rem;
+      letter-spacing: .22em; color: var(--gold); text-transform: uppercase;
+    }
+
+    /* ════════════════════════════
+       ARTICLE PAGE
+    ════════════════════════════ */
+    #pg-article { padding-top: var(--nav-h); }
+    .art-lay {
+      max-width: 860px; margin: 0 auto;
+      padding: clamp(32px,5vw,60px) clamp(16px,4vw,48px) clamp(48px,8vw,96px);
+    }
+    .art-back {
+      font-family: 'Cinzel', serif; font-size: .54rem;
+      letter-spacing: .24em; color: var(--gold); text-transform: uppercase;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+      margin-bottom: 32px; border: 1px solid var(--bg-gold);
+      padding: 9px 18px; transition: border-color .3s, color .3s, background .3s;
+      background: transparent;
+    }
+    .art-back:hover { border-color: var(--gold); background: rgba(200,148,42,.06); }
+    .art-cat {
+      font-family: 'Cinzel', serif; font-size: .54rem;
+      letter-spacing: .42em; color: var(--saffron); text-transform: uppercase; margin-bottom: 12px;
+    }
+    .art-title {
+      font-family: 'Cinzel Decorative', serif; font-weight: 900;
+      font-size: clamp(1.4rem, 3.5vw, 2.5rem); line-height: 1.15;
+      background: linear-gradient(135deg, var(--gold-dk), var(--gold-lt), var(--gold-pl));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 14px;
+    }
+    .art-meta {
+      font-family: 'Cinzel', serif; font-size: .57rem;
+      letter-spacing: .18em; color: var(--text3); margin-bottom: 32px;
+    }
+    .art-hero {
+      width: 100%; max-height: 420px; object-fit: cover;
+      display: block; margin-bottom: 32px;
+      border: 1px solid var(--bg-gold);
+      filter: brightness(.78) saturate(.88);
+    }
+    .art-body p {
+      font-size: 1.1rem; line-height: 1.9;
+      color: var(--text); margin-bottom: 20px;
+    }
+    .art-body h3 {
+      font-family: 'Cinzel', serif; font-size: .76rem;
+      letter-spacing: .28em; color: var(--gold);
+      text-transform: uppercase; margin: 36px 0 14px;
+      padding-bottom: 8px; border-bottom: 1px solid var(--bg-gold);
+    }
+    .art-img-wrap { margin: 28px 0; border: 1px solid var(--bg-gold); overflow: hidden; }
+    .art-img-wrap img { width: 100%; display: block; filter: brightness(.76) saturate(.85); }
+    .art-img-caption {
+      font-family: 'Cinzel', serif; font-size: .51rem;
+      letter-spacing: .2em; color: var(--text3);
+      text-transform: uppercase; padding: 9px 14px;
+      background: rgba(13,10,5,.9); text-align: center;
+    }
+    .art-sep {
+      display: flex; align-items: center; gap: 16px; margin: 32px 0;
+    }
+    .art-sep-ln { flex: 1; height: 1px; background: var(--bg-gold); }
+    .art-sep-dia { width: 6px; height: 6px; background: var(--gold); transform: rotate(45deg); }
+    .art-blockquote {
+      border-left: 2px solid var(--gold);
+      padding: 12px 22px; margin: 24px 0;
+      background: rgba(200,148,42,.05);
+    }
+    .art-blockquote p {
+      font-style: italic; color: var(--text2) !important;
+      margin: 0 !important; font-size: 1.08rem !important;
+    }
+
+    /* ════════════════════════════
+       OTHER DYNASTIES SECTION
+    ════════════════════════════ */
+    #other-dynasties-wrap {
+      border-top: 1px solid var(--bg-gold);
+      padding: clamp(32px,5vw,56px) clamp(16px,4vw,48px) clamp(40px,6vw,72px);
+    }
+    .other-dyn-head {
+      font-family: 'Cinzel', serif; font-size: .6rem;
+      letter-spacing: .4em; color: var(--gold);
+      text-transform: uppercase; text-align: center; margin-bottom: 6px;
+    }
+    .other-dyn-sub {
+      text-align: center; color: var(--text3);
+      margin-bottom: 28px; font-style: italic;
+    }
+    .other-dyn-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 14px; max-width: 1100px; margin: 0 auto;
+    }
+    .other-dyn-card {
+      border: 1px solid var(--bg-gold); padding: 15px 17px;
+      cursor: pointer; background: rgba(13,10,5,.7);
+      transition: border-color .3s, transform .3s, box-shadow .3s;
+    }
+    .other-dyn-card:hover {
+      border-color: var(--gold); transform: translateY(-2px);
+      box-shadow: 0 0 18px rgba(200,148,42,.14);
+    }
+    .odc-per {
+      font-family: 'Cinzel', serif; font-size: .48rem;
+      letter-spacing: .18em; color: var(--saffron); margin-bottom: 5px;
+    }
+    .odc-nm {
+      font-family: 'Cinzel', serif; font-size: .72rem;
+      color: var(--gold-lt); line-height: 1.3;
+    }
+
+    /* ════════════════════════════
+       BATTLE DETAIL — image in left panel
+    ════════════════════════════ */
+    #bd-vis-panel { position: relative; overflow: hidden; }
+    .bd-battle-img {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; opacity: .55;
+      filter: brightness(.5) saturate(.7);
+      display: block;
+    }
+    .bd-vis-overlay {
+      position: relative; z-index: 2;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-end;
+      height: 100%; padding: 40px;
+      background: linear-gradient(to top, rgba(7,6,4,.95) 0%, rgba(7,6,4,.3) 60%, transparent 100%);
+    }
+    @media (max-width:700px) {
+      .bd-battle-img { position: relative; height: 100%; width: 100%; object-fit: cover; }
+      #bd-vis-panel { height: 220px; }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="cvs"></canvas>
+  <div class="c-dot"  id="cdot"></div>
+  <div class="c-ring" id="cring"></div>
+
+  <div class="dyk" id="dyk">
+    <button class="dyk-x" id="dyk-close">✕</button>
+    <div class="dyk-lb">⚡ Did You Know?</div>
+    <div class="dyk-tx" id="dyk-tx"></div>
+  </div>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <div class="nav-brand" data-page="home" style="display:flex;align-items:center;gap:10px;">
+      <img src="images/logo.png" alt="Bharatam Logo" id="nav-logo"
+           style="width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(200,148,42,.5));flex-shrink:0;"/>
+      BHARATAM
+    </div>
+    <ul class="nav-links">
+      <li><a data-page="history">History &amp; Power</a></li>
+      <li><a data-page="dynasties">The Chronicles</a></li>
+      <li><a data-page="battles">Warfare &amp; Honor</a></li>
+    </ul>
+    <div class="nav-acts">
+      <button class="nav-btn" id="home-btn" title="Home" onclick="gotoPage('home')" style="font-size:1rem;">⌂</button>
+      <button class="nav-btn" id="sbtn" title="Ambient Sound" onclick="toggleSound()">♪</button>
+      <button class="nav-btn" id="search-btn" title="Search" onclick="openSearch()">⌕</button>
+    </div>
+  </nav>
+
+  <!-- HOME -->
+  <div class="pg act" id="pg-home">
+    <div class="hbg"></div>
+    <div class="hero-wrap">
+      <div class="h-aham" id="he-aham">Aham</div>
+
+      <div class="h-title"   id="he1">BHARATAM</div>
+      <div class="h-sep"     id="he2">
+        <div class="sep-ln r"></div>
+        <div class="sep-dia"></div>
+        <div class="sep-ln"></div>
+      </div>
+      <div class="h-sans" id="he3"
+        style="font-family:'Cinzel',serif;font-size:clamp(1rem,3vw,1.7rem);letter-spacing:.36em;
+               color:#e07318;text-shadow:0 0 32px rgba(224,115,24,.6),0 0 60px rgba(224,115,24,.2);
+               opacity:0;transform:translateY(18px);">ASMI</div>
+      <div class="h-tag" id="he4">Echoes of a Civilization that Shaped Time.</div>
+      <div id="he5" style="font-family:'Cinzel',serif;font-size:clamp(.42rem,1.2vw,.54rem);letter-spacing:.32em;color:var(--text3);text-transform:uppercase;margin-top:14px;opacity:0;transform:translateY(10px);">Founded by Ashutosh Kesari</div>
+    </div>
+
+    <div class="h-cards">
+      <div class="h-card" id="hca" data-page="dynasties">
+        <div class="h-card-inner">
+          <div class="h-card-ico ico-d">👑</div>
+          <div class="h-card-body">
+            <div class="h-card-ttl">Ashoka – The Emperor Who Chose Dharma</div>
+            <div class="h-card-dsc">Explore the dynasties that shaped the soul of Bharat.</div>
+            <div class="h-card-cta">Dynasties of Bharat →</div>
+          </div>
+        </div>
+      </div>
+      <div class="h-card" id="hcb" data-page="battles">
+        <div class="h-card-inner">
+          <div class="h-card-ico ico-b">⚔️</div>
+          <div class="h-card-body">
+            <div class="h-card-ttl">Haldighati – Valor Against Empire</div>
+            <div class="h-card-dsc">Discover the battles that forged India's destiny.</div>
+            <div class="h-card-cta">Battles of Bharat →</div>
+          </div>
+        </div>
+      </div>
+      <div class="h-card" id="hcc" data-page="history">
+        <div class="h-card-inner">
+          <div class="h-card-ico ico-h">📜</div>
+          <div class="h-card-body">
+            <div class="h-card-ttl">Alexander's Invasion – The Limits of a Conqueror</div>
+            <div class="h-card-dsc">Deep chronicles of power, invasion, and civilizational legacy.</div>
+            <div class="h-card-cta">History &amp; Power →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scroll cue — below cards, no overlap -->
+    <div class="s-cue" id="scue">
+      <div class="s-cue-tx">Explore Further</div>
+      <div class="s-cue-ln"></div>
+    </div>
+  </div>
+
+  <!-- HISTORY & POWER PAGE -->
+  <div class="pg inner" id="pg-history">
+    <div class="hp-hdr">
+      <div class="hp-eye">Bharat Through the Ages</div>
+      <div class="hp-ttl">History &amp; Power</div>
+      <div class="hp-sub">Deep chronicles of the events, invasions, and civilizational currents that forged India's extraordinary story.</div>
+    </div>
+    <div class="hp-divider">
+      <div class="hp-divider-ln"></div>
+      <div class="hp-divider-dia"></div>
+      <div class="hp-divider-ln"></div>
+    </div>
+    <div class="hp-grid" id="hp-grid"></div>
+  </div>
+
+  <!-- ARTICLE PAGE -->
+  <div class="pg inner" id="pg-article">
+    <div class="art-lay" id="art-content"></div>
+  </div>
+
+  <!-- DYNASTIES -->
+  <div class="pg inner" id="pg-dynasties">
+    <div class="pg-hdr">
+      <div class="pg-eye">The Chronicles of Bharat</div>
+      <div class="pg-ttl">Dynasties of India</div>
+      <div class="pg-sub">From the banks of the Sindhu to the shores of sovereignty</div>
+    </div>
+    <div class="shloka">
+      <div class="shl-tx">"यदा यदा हि धर्मस्य ग्लानिर्भवति भारत…"</div>
+      <div class="shl-at">— Bhagavad Gita 4.7</div>
+    </div>
+    <div class="era-wrap">
+      <div class="era-div"><div class="era-ln r"></div><div class="era-lbl">Ancient India</div><div class="era-ln"></div></div>
+      <div class="d-grid" id="gr-ancient"></div>
+      <div class="era-div"><div class="era-ln r"></div><div class="era-lbl">Early Medieval</div><div class="era-ln"></div></div>
+      <div class="d-grid" id="gr-medieval"></div>
+      <div class="era-div"><div class="era-ln r"></div><div class="era-lbl">Late Medieval &amp; Modern</div><div class="era-ln"></div></div>
+      <div class="d-grid" id="gr-modern"></div>
+    </div>
+  </div>
+
+  <!-- CHRONOLOGY -->
+  <div class="pg inner" id="pg-chronology">
+    <div class="chr-banner">
+      <div class="chr-bc">
+        <div id="chr-eye">Chronology of Rulers</div>
+        <div id="chr-ttl">—</div>
+        <div id="chr-per">—</div>
+      </div>
+    </div>
+    <button class="bk-btn" id="bk-dynasties">← Back to Dynasties</button>
+    <div class="tl-wrap">
+      <div class="tl-spine"></div>
+      <div id="tl-ents"></div>
+    </div>
+    <div id="other-dynasties-wrap"></div>
+  </div>
+
+  <!-- BATTLES -->
+  <div class="pg inner" id="pg-battles">
+    <div class="pg-hdr">
+      <div class="pg-eye">Warfare &amp; Honor</div>
+      <div class="pg-ttl">Battles of Bharat</div>
+      <div class="pg-sub">The clash of iron that shaped the destiny of a civilization</div>
+    </div>
+    <div class="shloka">
+      <div class="shl-tx">"क्लैब्यं मा स्म गमः पार्थ… उत्तिष्ठ परंतप"</div>
+      <div class="shl-at">— Bhagavad Gita 2.3</div>
+    </div>
+    <div class="bt-grid" id="bt-grid"></div>
+  </div>
+
+  <!-- BATTLE DETAIL -->
+  <div class="pg" id="pg-bdetail">
+    <div class="bd-lay">
+      <div class="bd-vis" id="bd-vis-panel">
+        <img class="bd-battle-img" id="bd-battle-img" src="" alt="" />
+        <div class="bd-vis-overlay">
+          <div class="bd-ico" id="bd-ico">⚔️</div>
+          <div class="bd-vnm" id="bd-vnm"></div>
+          <div class="bd-vyr" id="bd-vyr"></div>
+        </div>
+      </div>
+      <div class="bd-info" id="bd-info"></div>
+    </div>
+  </div>
+
+  <!-- ═══ INTRO SPLASH ═══ -->
+  <div id="intro-splash">
+    <canvas id="intro-canvas"></canvas>
+    <img id="intro-logo" src="images/logo.png" alt=""/>
+  </div>
+
+  <style>
+  #intro-splash {
+    position: fixed; inset: 0; z-index: 99999;
+    background: #070604;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #intro-canvas {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+  }
+  #intro-logo {
+    position: relative; z-index: 2;
+    width: clamp(200px, 40vmin, 320px);
+    height: clamp(200px, 40vmin, 320px);
+    object-fit: contain;
+    filter: drop-shadow(0 0 32px rgba(200,148,42,.6));
+  }
+  </style>
+
+  <script>
+  (function() {
+    const splash  = document.getElementById('intro-splash');
+    const logo    = document.getElementById('intro-logo');
+    const canvas  = document.getElementById('intro-canvas');
+    const ctx     = canvas.getContext('2d');
+
+    let W, H, cx, cy;
+    let startTime = null;
+
+    // Animation phases (ms):
+    // 0–600    : logo fades in
+    // 600–1200 : hold
+    // 1200–1800: arrow shoots upward + golden line rises + logo fades out
+    // 1800–2200: splash fades out, reveal site
+    const TOTAL = 2200;
+
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      cx = W / 2;
+      cy = H / 2;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Draw arrowhead
+    function drawArrow(x, y, size, alpha) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      const g = ctx.createLinearGradient(x, y, x, y - size * 3);
+      g.addColorStop(0,   'rgba(245,224,160,1)');
+      g.addColorStop(0.5, 'rgba(200,148,42,0.8)');
+      g.addColorStop(1,   'rgba(200,148,42,0)');
+      ctx.strokeStyle = g;
+      ctx.lineWidth = size * 0.18;
+      ctx.lineCap = 'round';
+      // Arrow shaft
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, y - size * 3);
+      ctx.stroke();
+      // Arrowhead triangle
+      ctx.fillStyle = 'rgba(245,224,160,' + alpha + ')';
+      ctx.beginPath();
+      ctx.moveTo(x, y - size * 3.6);
+      ctx.lineTo(x - size * 0.5, y - size * 2.8);
+      ctx.lineTo(x + size * 0.5, y - size * 2.8);
+      ctx.closePath();
+      ctx.fill();
+      // Fletching
+      ctx.strokeStyle = 'rgba(200,148,42,' + alpha * 0.7 + ')';
+      ctx.lineWidth = size * 0.1;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x - size * 0.4, y + size * 0.5);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + size * 0.4, y + size * 0.5);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Golden burst rays from center
+    function drawRays(alpha) {
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.35;
+      const rays = 16;
+      for (let i = 0; i < rays; i++) {
+        const angle = (i / rays) * Math.PI * 2;
+        const len   = W * 0.55;
+        const g = ctx.createLinearGradient(cx, cy, cx + Math.cos(angle)*len, cy + Math.sin(angle)*len);
+        g.addColorStop(0,   'rgba(200,148,42,0.6)');
+        g.addColorStop(1,   'rgba(200,148,42,0)');
+        ctx.strokeStyle = g;
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(angle) * len, cy + Math.sin(angle) * len);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function ease(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+    function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+    function frame(ts) {
+      if (!startTime) startTime = ts;
+      const elapsed = ts - startTime;
+      const t = elapsed / TOTAL;
+
+      ctx.clearRect(0, 0, W, H);
+
+      // Phase 1: logo fade in (0–600ms)
+      let logoAlpha = 1;
+      if (elapsed < 600) {
+        logoAlpha = ease(clamp01(elapsed / 600));
+      }
+      // Phase 3: logo fade out (1200–1800ms)
+      if (elapsed > 1200) {
+        logoAlpha = ease(clamp01(1 - (elapsed - 1200) / 600));
+      }
+      logo.style.opacity = logoAlpha;
+
+      // Phase 3: arrow shooting up (1200–1800ms)
+      if (elapsed > 1200 && elapsed < 1900) {
+        const p     = clamp01((elapsed - 1200) / 600);
+        const ep    = ease(p);
+        const arrowY = cy + ep * -(H * 0.65); // shoots upward
+        const arrowAlpha = 1 - ep * 0.85;
+        const arrowSize = clamp01(W / 400) * 22;
+
+        // Golden streak line
+        ctx.save();
+        ctx.globalAlpha = (1 - ep) * 0.9;
+        const streak = ctx.createLinearGradient(cx, cy, cx, cy - H * 0.65 * ep);
+        streak.addColorStop(0,   'rgba(200,148,42,0)');
+        streak.addColorStop(0.4, 'rgba(232,184,75,0.6)');
+        streak.addColorStop(1,   'rgba(245,224,160,0.95)');
+        ctx.strokeStyle = streak;
+        ctx.lineWidth   = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy + 30);
+        ctx.lineTo(cx, arrowY);
+        ctx.stroke();
+        ctx.restore();
+
+        drawArrow(cx, arrowY, arrowSize, arrowAlpha);
+        drawRays(1 - ep);
+      }
+
+      // Phase 4: splash overlay fade out (1750–2200ms)
+      if (elapsed > 1750) {
+        const fadeP = clamp01((elapsed - 1750) / 450);
+        splash.style.opacity = 1 - ease(fadeP);
+      }
+
+      if (elapsed < TOTAL) {
+        requestAnimationFrame(frame);
+      } else {
+        splash.style.display = 'none';
+        // Trigger hero animation now
+        if (window.animateHero) window.animateHero();
+      }
+    }
+
+    // Delay hero animation until splash is done
+    window._splashDone = false;
+    const _origAnimate = window.animateHero;
+    // Override animateHero so it doesn't run on DOMContentLoaded
+    window.animateHero = function() { /* held until splash ends */ };
+
+    // Start splash on load
+    window.addEventListener('load', () => {
+      requestAnimationFrame(frame);
+    });
+
+    // Restore real animateHero for splash to call at end
+    document.addEventListener('DOMContentLoaded', () => {
+      // Store the real one after app.js defines it
+      setTimeout(() => {
+        const real = function() {
+          const ids = ['he-aham','he1','he2','he3','he4','he5','hca','hcb','hcc','scue'];
+          if (typeof gsap !== 'undefined') {
+            const tl = gsap.timeline({ defaults: { ease:'power3.out' } });
+            tl
+              .to('#he-aham', { opacity:1, y:0, duration:.7 })
+              .to('#he1',     { opacity:1, y:0, scale:1, duration:1.05 }, '-=.42')
+              .to('#he2',     { opacity:1, duration:.6 },                  '-=.5')
+              .to('#he3',     { opacity:1, y:0, duration:.85 },            '-=.4')
+              .to('#he4',     { opacity:1, y:0, duration:.75 },            '-=.4')
+              .to('#he5',     { opacity:1, y:0, duration:.6  },            '-=.3')
+              .to(['#hca','#hcb','#hcc'], { opacity:1, y:0, duration:.75, stagger:.16 }, '-=.32')
+              .to('#scue',    { opacity:1, duration:.7 },                  '-=.18');
+          } else {
+            ids.forEach((id,i) => {
+              const el = document.getElementById(id);
+              if (!el) return;
+              setTimeout(() => {
+                el.style.transition = 'opacity .6s ease, transform .6s ease';
+                el.style.opacity    = '1';
+                el.style.transform  = 'none';
+              }, 80 + i * 105);
+            });
+          }
+        };
+        window.animateHero = real;
+      }, 100);
+    });
+  })();
+  </script>
+
+  <script src="js/data.js"></script>
+
+  <!-- SEARCH OVERLAY -->
+  <div id="search-overlay" style="display:none">
+    <div id="search-backdrop" onclick="closeSearch()"></div>
+    <div id="search-modal">
+      <div id="search-box-wrap">
+        <span id="search-icon">⌕</span>
+        <input type="text" id="search-input" placeholder="Search dynasties, battles, history…" autocomplete="off" />
+        <button id="search-close" onclick="closeSearch()">✕</button>
+      </div>
+      <div id="search-results"></div>
+      <div id="search-hint">Press <kbd>Esc</kbd> to close · Try "Maurya", "Panipat", "Alexander"</div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/cursor.js"></script>
+  <script src="js/scroll.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/dyk.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+  /* ── Spotlight Search ── */
+  function openSearch() {
+    const overlay = document.getElementById('search-overlay');
+    overlay.style.display = 'block';
+    setTimeout(() => document.getElementById('search-input').focus(), 50);
+    document.getElementById('search-results').innerHTML = '';
+  }
+  function closeSearch() {
+    document.getElementById('search-overlay').style.display = 'none';
+    document.getElementById('search-input').value = '';
+    document.getElementById('search-results').innerHTML = '';
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeSearch();
+  });
+  document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('search-input');
+    if (!input) return;
+    input.addEventListener('input', () => {
+      const q = input.value.trim().toLowerCase();
+      const res = document.getElementById('search-results');
+      if (!q) { res.innerHTML = ''; return; }
+
+      // Build searchable items from data
+      const items = [];
+      const allDyn = [...(DYN.ancient||[]), ...(DYN.medieval||[]), ...(DYN.modern||[])];
+      allDyn.forEach(d => {
+        items.push({ tag:'Dynasty', name: d.name, desc: d.sig, action: () => { closeSearch(); showChronology(d.id); } });
+        (d.rulers||[]).forEach(r => {
+          items.push({ tag:'Ruler', name: r.name + ' · ' + d.name, desc: r.desc, action: () => { closeSearch(); showChronology(d.id); } });
+        });
+      });
+      (BATTLES||[]).forEach(b => {
+        items.push({ tag:'Battle', name: b.name + ' (' + b.year + ')', desc: b.summary, action: () => { closeSearch(); showBattleDetail(b.id); } });
+      });
+      (ARTICLES||[]).forEach(a => {
+        items.push({ tag:'Article', name: a.title, desc: a.excerpt, action: () => { closeSearch(); showArticle(a.id); } });
+      });
+
+      const matches = items.filter(it =>
+        it.name.toLowerCase().includes(q) || it.desc.toLowerCase().includes(q)
+      ).slice(0, 8);
+
+      if (!matches.length) {
+        res.innerHTML = '<div class="sr-empty">No results for "' + input.value + '"</div>';
+        return;
+      }
+      res.innerHTML = matches.map((m, i) => `
+        <div class="sr-item" data-si="${i}">
+          <div>
+            <div class="sr-tag">${m.tag}</div>
+          </div>
+          <div>
+            <div class="sr-name">${m.name}</div>
+            <div class="sr-desc">${m.desc.substring(0,90)}…</div>
+          </div>
+        </div>
+      `).join('');
+      // Store match actions
+      res.querySelectorAll('.sr-item').forEach((el, i) => {
+        el.addEventListener('click', matches[i].action);
+      });
+    });
+  });
+  </script>
+</body>
+</html>

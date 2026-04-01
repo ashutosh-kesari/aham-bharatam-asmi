@@ -1,0 +1,46 @@
+/* ════════════════════════════════════════
+   battles.css
+════════════════════════════════════════ */
+.bt-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));
+  gap:15px; max-width:1360px; margin:0 auto;
+  padding:clamp(24px,5vw,42px) clamp(16px,4vw,50px) clamp(48px,8vw,70px);
+}
+
+.bc {
+  background:linear-gradient(145deg,rgba(18,8,6,.92),rgba(10,4,4,.97));
+  border:1px solid var(--bg-emb); padding:20px 18px 17px;
+  cursor:pointer; position:relative; overflow:hidden;
+  transition:border-color .32s,transform .32s cubic-bezier(.4,0,.2,1),box-shadow .32s;
+  will-change:transform; opacity:0; transform:translateY(20px);
+}
+.bc.vis { opacity:1; transform:translateY(0); }
+.bc::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,var(--ember),transparent);
+  opacity:0; transition:opacity .32s;
+}
+.bc::after {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(192,64,32,.05) 0%,transparent 65%);
+  opacity:0; transition:opacity .32s;
+}
+.bc:hover {
+  border-color:var(--bg-emb2); transform:translateY(-3px);
+  box-shadow:0 14px 38px rgba(0,0,0,.7),0 3px 14px rgba(192,64,32,.1);
+}
+.bc:hover::before,.bc:hover::after { opacity:1; }
+
+.bc-yr  { font-family:'Cinzel',serif; font-size:.54rem; letter-spacing:.22em; color:rgba(224,115,24,.75); margin-bottom:6px; text-transform:uppercase; }
+.bc-nm  { font-family:'Cinzel',serif; font-size:clamp(.88rem,2.5vw,1rem); color:#e8c090; margin-bottom:6px; letter-spacing:.04em; line-height:1.2; }
+.bc-bt  { font-size:.68rem; color:var(--text3); margin-bottom:10px; font-style:italic; }
+.bc-bt strong { color:var(--text2); font-weight:500; font-style:normal; }
+.bc-sm  { font-size:.78rem; font-style:italic; color:var(--text2); line-height:1.56; border-left:2px solid var(--bg-emb); padding-left:10px; margin-bottom:15px; }
+.bc-bt2 {
+  font-family:'Cinzel',serif; font-size:.54rem; letter-spacing:.2em;
+  text-transform:uppercase; color:rgba(224,115,24,.9); background:transparent;
+  border:1px solid var(--bg-emb); padding:6px 14px; cursor:pointer;
+  display:inline-flex; align-items:center; gap:7px; transition:all .3s;
+}
+.bc-bt2:hover { background:rgba(192,64,32,.1); border-color:var(--ember); color:#f0a878; gap:12px; }

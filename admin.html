@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BHARATAM — Admin Data Entry</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:     #070604;
+  --bg2:    #0f0d09;
+  --bg3:    #161209;
+  --gold:   #c8942a;
+  --gold-lt:#e8b84b;
+  --saff:   #e07318;
+  --text:   #d8c8a0;
+  --text2:  #a89070;
+  --text3:  #6a5840;
+  --border: rgba(200,148,42,.22);
+  --border-focus: rgba(200,148,42,.7);
+  --red:    #c04020;
+  --green:  #4a9060;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Crimson Pro', Georgia, serif;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.adm-header {
+  background: rgba(13,10,6,.97);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.adm-logo {
+  font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 700;
+  color: var(--gold-lt); letter-spacing: .12em;
+}
+.adm-logo span { color: var(--text3); font-size: .7rem; letter-spacing: .2em; margin-left: 12px; }
+
+/* ── Layout ── */
+.adm-body {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: calc(100vh - 57px);
+}
+
+/* ── Sidebar ── */
+.adm-sidebar {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  padding: 20px 0;
+}
+.adm-sidebar-section {
+  font-family: 'Cinzel', serif; font-size: .52rem;
+  letter-spacing: .32em; color: var(--text3);
+  text-transform: uppercase; padding: 8px 18px 4px;
+}
+.adm-nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 18px; cursor: pointer;
+  font-size: .9rem; color: var(--text2);
+  transition: background .2s, color .2s;
+  border-left: 2px solid transparent;
+}
+.adm-nav-item:hover { background: rgba(200,148,42,.06); color: var(--text); }
+.adm-nav-item.active {
+  background: rgba(200,148,42,.1);
+  color: var(--gold-lt);
+  border-left-color: var(--gold);
+}
+.adm-nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
+
+/* ── Main content ── */
+.adm-main { padding: 28px 32px; overflow-y: auto; }
+
+.adm-panel { display: none; }
+.adm-panel.active { display: block; }
+
+.adm-panel-title {
+  font-family: 'Cinzel', serif; font-size: 1.2rem;
+  color: var(--gold-lt); margin-bottom: 6px;
+}
+.adm-panel-sub {
+  color: var(--text3); font-size: .9rem; margin-bottom: 24px;
+  font-style: italic;
+}
+
+/* ── Forms ── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.form-grid.full { grid-template-columns: 1fr; }
+.form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label {
+  font-family: 'Cinzel', serif; font-size: .52rem;
+  letter-spacing: .22em; color: var(--saff); text-transform: uppercase;
+}
+.field input, .field textarea, .field select {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text); font-family: 'Crimson Pro', Georgia, serif;
+  font-size: .95rem; padding: 9px 12px;
+  outline: none; transition: border-color .2s;
+  width: 100%;
+}
+.field input:focus, .field textarea:focus, .field select:focus {
+  border-color: var(--border-focus);
+}
+.field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+.field select { cursor: pointer; }
+.field select option { background: var(--bg3); }
+
+/* Stars select */
+.stars-row { display: flex; gap: 6px; align-items: center; }
+.star-btn {
+  background: transparent; border: none; cursor: pointer;
+  font-size: 1.3rem; color: var(--text3); transition: color .15s; padding: 2px;
+}
+.star-btn.on { color: var(--gold); }
+
+/* ── Buttons ── */
+.btn {
+  font-family: 'Cinzel', serif; font-size: .56rem;
+  letter-spacing: .2em; text-transform: uppercase;
+  padding: 10px 22px; cursor: pointer; border: 1px solid;
+  transition: all .25s; display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-gold {
+  background: rgba(200,148,42,.12); border-color: var(--gold);
+  color: var(--gold-lt);
+}
+.btn-gold:hover { background: rgba(200,148,42,.22); }
+.btn-green {
+  background: rgba(74,144,96,.12); border-color: var(--green);
+  color: #6abf84;
+}
+.btn-green:hover { background: rgba(74,144,96,.22); }
+.btn-red {
+  background: rgba(192,64,32,.1); border-color: var(--red);
+  color: #e07060;
+}
+.btn-red:hover { background: rgba(192,64,32,.2); }
+.btn-sm { padding: 6px 14px; font-size: .48rem; }
+
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+
+/* ── Cards list ── */
+.item-list { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
+.item-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; transition: border-color .2s;
+}
+.item-card:hover { border-color: rgba(200,148,42,.4); }
+.item-card-body { flex: 1; min-width: 0; }
+.item-card-title {
+  font-family: 'Cinzel', serif; font-size: .82rem;
+  color: var(--gold-lt); margin-bottom: 3px;
+}
+.item-card-sub { font-size: .82rem; color: var(--text3); }
+.item-card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ── Ruler sub-items ── */
+.ruler-list { margin-top: 10px; }
+.ruler-item {
+  background: rgba(200,148,42,.04); border: 1px solid rgba(200,148,42,.1);
+  padding: 8px 12px; margin-bottom: 6px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.ruler-item-name { font-family: 'Cinzel', serif; font-size: .76rem; color: var(--text); }
+.ruler-item-reign { font-size: .8rem; color: var(--text3); }
+
+/* ── Section divider ── */
+.adm-divider {
+  height: 1px; background: var(--border); margin: 24px 0;
+}
+.adm-section-head {
+  font-family: 'Cinzel', serif; font-size: .6rem;
+  letter-spacing: .32em; color: var(--gold); text-transform: uppercase;
+  margin-bottom: 14px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Export panel ── */
+.export-box {
+  background: #0a0f06; border: 1px solid rgba(74,144,96,.3);
+  padding: 16px; font-family: 'Courier New', monospace;
+  font-size: .72rem; color: #90c878; line-height: 1.6;
+  max-height: 420px; overflow-y: auto; white-space: pre-wrap;
+  word-break: break-all;
+}
+.export-instructions {
+  background: rgba(200,148,42,.06); border: 1px solid var(--border);
+  padding: 14px 18px; margin-bottom: 18px; font-size: .9rem;
+  line-height: 1.7; color: var(--text2);
+}
+.export-instructions strong { color: var(--gold-lt); }
+
+/* ── Toast ── */
+#toast {
+  position: fixed; bottom: 28px; right: 28px;
+  background: rgba(13,10,6,.97); border: 1px solid var(--gold);
+  color: var(--gold-lt); font-family: 'Cinzel', serif;
+  font-size: .6rem; letter-spacing: .18em;
+  padding: 12px 22px; z-index: 9999;
+  opacity: 0; transition: opacity .3s;
+  pointer-events: none;
+}
+#toast.show { opacity: 1; }
+
+/* ── Empty state ── */
+.empty-state {
+  text-align: center; padding: 40px 20px;
+  color: var(--text3); font-style: italic;
+}
+
+@media (max-width: 700px) {
+  .adm-body { grid-template-columns: 1fr; }
+  .adm-sidebar { display: flex; overflow-x: auto; padding: 8px 0; border-right: none; border-bottom: 1px solid var(--border); }
+  .adm-sidebar-section { display: none; }
+  .adm-nav-item { white-space: nowrap; border-left: none; border-bottom: 2px solid transparent; }
+  .adm-nav-item.active { border-bottom-color: var(--gold); border-left-color: transparent; }
+  .adm-main { padding: 18px 16px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid.three { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="adm-header">
+  <div class="adm-logo">BHARATAM <span>Admin Panel</span></div>
+  <div style="font-size:.78rem;color:var(--text3)">Data Entry &amp; Export</div>
+</div>
+
+<div class="adm-body">
+
+  <!-- Sidebar -->
+  <nav class="adm-sidebar">
+    <div class="adm-sidebar-section">Content</div>
+    <div class="adm-nav-item active" onclick="showPanel('dynasties')">
+      <span class="icon">👑</span> Dynasties
+    </div>
+    <div class="adm-nav-item" onclick="showPanel('battles')">
+      <span class="icon">⚔️</span> Battles
+    </div>
+    <div class="adm-nav-item" onclick="showPanel('articles')">
+      <span class="icon">📜</span> Articles
+    </div>
+    <div class="adm-nav-item" onclick="showPanel('dyks')">
+      <span class="icon">⚡</span> Did You Know
+    </div>
+    <div class="adm-sidebar-section" style="margin-top:12px">Export</div>
+    <div class="adm-nav-item" onclick="showPanel('export')">
+      <span class="icon">💾</span> Export data.js
+    </div>
+    <div class="adm-nav-item" onclick="showPanel('import')">
+      <span class="icon">📂</span> Import / Load
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="adm-main">
+
+    <!-- ═══ DYNASTIES PANEL ═══ -->
+    <div class="adm-panel active" id="panel-dynasties">
+      <div class="adm-panel-title">Dynasties</div>
+      <div class="adm-panel-sub">Add dynasties across Ancient, Early Medieval, and Late Medieval/Modern eras.</div>
+
+      <div class="adm-section-head">Add New Dynasty</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Dynasty Name</label>
+          <input type="text" id="dyn-name" placeholder="e.g. Gupta Empire"/>
+        </div>
+        <div class="field">
+          <label>Era</label>
+          <select id="dyn-era">
+            <option value="ancient">Ancient India</option>
+            <option value="medieval">Early Medieval</option>
+            <option value="modern">Late Medieval &amp; Modern</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Period</label>
+          <input type="text" id="dyn-period" placeholder="e.g. 320 – 550 CE"/>
+        </div>
+        <div class="field">
+          <label>Founder</label>
+          <input type="text" id="dyn-founder" placeholder="e.g. Sri Gupta"/>
+        </div>
+      </div>
+      <div class="form-grid full">
+        <div class="field">
+          <label>Significance (one-liner)</label>
+          <textarea id="dyn-sig" rows="2" placeholder="What made this dynasty remarkable?"></textarea>
+        </div>
+      </div>
+
+      <div class="adm-divider"></div>
+      <div class="adm-section-head">Rulers for this Dynasty</div>
+      <div id="ruler-list-form" class="ruler-list"></div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label>Ruler Name</label>
+          <input type="text" id="ruler-name" placeholder="e.g. Chandragupta II"/>
+        </div>
+        <div class="field">
+          <label>Reign</label>
+          <input type="text" id="ruler-reign" placeholder="e.g. 380–415 CE"/>
+        </div>
+      </div>
+      <div class="form-grid full">
+        <div class="field">
+          <label>Description</label>
+          <textarea id="ruler-desc" rows="3" placeholder="Historical significance of this ruler…"></textarea>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Importance (Stars)</label>
+        <div class="stars-row" id="ruler-stars-ui">
+          <button class="star-btn on" data-v="1" onclick="setStar(1)">★</button>
+          <button class="star-btn on" data-v="2" onclick="setStar(2)">★</button>
+          <button class="star-btn on" data-v="3" onclick="setStar(3)">★</button>
+          <button class="star-btn" data-v="4" onclick="setStar(4)">★</button>
+          <button class="star-btn" data-v="5" onclick="setStar(5)">★</button>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-bottom:20px">
+        <button class="btn btn-gold btn-sm" onclick="addRulerToForm()">+ Add Ruler</button>
+        <button class="btn btn-red btn-sm" onclick="clearRulerForm()">Clear</button>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-green" onclick="saveDynasty()">✓ Save Dynasty</button>
+        <button class="btn btn-red btn-sm" onclick="clearDynastyForm()">Clear Form</button>
+      </div>
+
+      <div class="adm-divider"></div>
+      <div class="adm-section-head">Saved Dynasties (<span id="dyn-count">0</span>)</div>
+      <div id="dyn-list" class="item-list">
+        <div class="empty-state">No dynasties added yet. Fill the form above and click Save.</div>
+      </div>
+    </div>
+
+    <!-- ═══ BATTLES PANEL ═══ -->
+    <div class="adm-panel" id="panel-battles">
+      <div class="adm-panel-title">Battles</div>
+      <div class="adm-panel-sub">Add battles with full detail — date, commanders, strategy, significance.</div>
+
+      <div class="adm-section-head">Add New Battle</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Battle Name</label>
+          <input type="text" id="bat-name" placeholder="e.g. Battle of Haldighati"/>
+        </div>
+        <div class="field">
+          <label>Year</label>
+          <input type="text" id="bat-year" placeholder="e.g. 1576 CE"/>
+        </div>
+        <div class="field">
+          <label>Icon (emoji)</label>
+          <input type="text" id="bat-icon" placeholder="⚔️" maxlength="4"/>
+        </div>
+        <div class="field">
+          <label>Date (full)</label>
+          <input type="text" id="bat-date" placeholder="e.g. June 18, 1576"/>
+        </div>
+        <div class="field">
+          <label>Location</label>
+          <input type="text" id="bat-loc" placeholder="e.g. Haldighati Pass, Rajasthan"/>
+        </div>
+        <div class="field">
+          <label>Outcome</label>
+          <input type="text" id="bat-out" placeholder="e.g. Tactical Mughal victory"/>
+        </div>
+      </div>
+      <div class="form-grid full">
+        <div class="field">
+          <label>Between (combatants)</label>
+          <input type="text" id="bat-between" placeholder="e.g. Mughal Empire vs. Mewar Kingdom"/>
+        </div>
+        <div class="field">
+          <label>Commanders</label>
+          <input type="text" id="bat-cmd" placeholder="e.g. Man Singh I vs. Maharana Pratap Singh I"/>
+        </div>
+        <div class="field">
+          <label>Forces Engaged</label>
+          <input type="text" id="bat-str" placeholder="e.g. Mughal: ~10,000 | Mewar: ~3,000"/>
+        </div>
+        <div class="field">
+          <label>Summary (card view)</label>
+          <textarea id="bat-summary" rows="2" placeholder="Brief summary shown on the battle card…"></textarea>
+        </div>
+        <div class="field">
+          <label>Strategy</label>
+          <textarea id="bat-strat" rows="3" placeholder="How was the battle approached tactically?"></textarea>
+        </div>
+        <div class="field">
+          <label>Turning Point</label>
+          <textarea id="bat-turn" rows="2" placeholder="What decided the outcome?"></textarea>
+        </div>
+        <div class="field">
+          <label>Casualties</label>
+          <input type="text" id="bat-cas" placeholder="e.g. ~500 Mewari, ~350 Mughal soldiers"/>
+        </div>
+        <div class="field">
+          <label>Historical Significance</label>
+          <textarea id="bat-sig" rows="3" placeholder="Why does this battle matter to Indian history?"></textarea>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-green" onclick="saveBattle()">✓ Save Battle</button>
+        <button class="btn btn-red btn-sm" onclick="clearBattleForm()">Clear Form</button>
+      </div>
+
+      <div class="adm-divider"></div>
+      <div class="adm-section-head">Saved Battles (<span id="bat-count">0</span>)</div>
+      <div id="bat-list" class="item-list">
+        <div class="empty-state">No battles added yet.</div>
+      </div>
+    </div>
+
+    <!-- ═══ ARTICLES PANEL ═══ -->
+    <div class="adm-panel" id="panel-articles">
+      <div class="adm-panel-title">History &amp; Power Articles</div>
+      <div class="adm-panel-sub">Add long-form articles with title, category, hero image, and body paragraphs.</div>
+
+      <div class="adm-section-head">Add New Article</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Title</label>
+          <input type="text" id="art-title" placeholder="e.g. The Rise of the Guptas"/>
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <input type="text" id="art-cat" placeholder="e.g. Empire &amp; Legacy"/>
+        </div>
+        <div class="field">
+          <label>Subtitle / Period</label>
+          <input type="text" id="art-subtitle" placeholder="e.g. 320 CE — The Golden Age Begins"/>
+        </div>
+        <div class="field">
+          <label>Hero Image URL</label>
+          <input type="text" id="art-img" placeholder="https://…"/>
+        </div>
+      </div>
+      <div class="form-grid full">
+        <div class="field">
+          <label>Excerpt (shown on card)</label>
+          <textarea id="art-excerpt" rows="2" placeholder="A short teaser shown on the article card…"></textarea>
+        </div>
+      </div>
+
+      <div class="adm-divider"></div>
+      <div class="adm-section-head">Article Body</div>
+      <p style="font-size:.85rem;color:var(--text3);margin-bottom:14px;font-style:italic">Add paragraphs, headings, pull-quotes, and images one block at a time.</p>
+
+      <div id="art-body-blocks"></div>
+
+      <div class="form-grid" style="margin-bottom:10px">
+        <div class="field">
+          <label>Block Type</label>
+          <select id="art-block-type">
+            <option value="p">Paragraph</option>
+            <option value="h3">Section Heading</option>
+            <option value="quote">Pull Quote</option>
+            <option value="img">Image with Caption</option>
+          </select>
+        </div>
+      </div>
+      <div id="art-block-fields"></div>
+      <div class="btn-row" style="margin-bottom:20px">
+        <button class="btn btn-gold btn-sm" onclick="addArticleBlock()">+ Add Block</button>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-green" onclick="saveArticle()">✓ Save Article</button>
+        <button class="btn btn-red btn-sm" onclick="clearArticleForm()">Clear Form</button>
+      </div>
+
+      <div class="adm-divider"></div>
+      <div class="adm-section-head">Saved Articles (<span id="art-count">0</span>)</div>
+      <div id="art-list" class="item-list">
+        <div class="empty-state">No articles added yet.</div>
+      </div>
+    </div>
+
+    <!-- ═══ DYK PANEL ═══ -->
+    <div class="adm-panel" id="panel-dyks">
+      <div class="adm-panel-title">Did You Know?</div>
+      <div class="adm-panel-sub">Short fascinating facts shown as pop-ups when navigating pages.</div>
+
+      <div class="adm-section-head">Add Fact</div>
+      <div class="form-grid full">
+        <div class="field">
+          <label>Fact</label>
+          <textarea id="dyk-text" rows="3" placeholder="e.g. The Iron Pillar of Delhi has stood for 1,650 years without rusting…"></textarea>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-green" onclick="saveDyk()">+ Add Fact</button>
+      </div>
+
+      <div class="adm-divider"></div>
+      <div class="adm-section-head">Saved Facts (<span id="dyk-count">0</span>)</div>
+      <div id="dyk-list" class="item-list">
+        <div class="empty-state">No facts added yet.</div>
+      </div>
+    </div>
+
+    <!-- ═══ EXPORT PANEL ═══ -->
+    <div class="adm-panel" id="panel-export">
+      <div class="adm-panel-title">Export data.js</div>
+
+      <div class="export-instructions">
+        <strong>How to use:</strong><br/>
+        1. Add all your dynasties, battles, articles and facts using the panels on the left.<br/>
+        2. Click <strong>Generate data.js</strong> below.<br/>
+        3. Copy the generated code, or click <strong>Download data.js</strong>.<br/>
+        4. Replace the existing <code>js/data.js</code> file in your BHARATAM folder with this new file.<br/>
+        5. Redeploy to Netlify — your new content will appear immediately.
+      </div>
+
+      <div class="btn-row" style="margin-bottom:18px">
+        <button class="btn btn-gold" onclick="generateExport()">⚙ Generate data.js</button>
+        <button class="btn btn-green" onclick="downloadExport()">⬇ Download data.js</button>
+        <button class="btn btn-gold btn-sm" onclick="copyExport()">Copy to Clipboard</button>
+      </div>
+
+      <div class="export-box" id="export-box">// Click "Generate data.js" to preview your data here…</div>
+    </div>
+
+    <!-- ═══ IMPORT PANEL ═══ -->
+    <div class="adm-panel" id="panel-import">
+      <div class="adm-panel-title">Import / Load Saved Data</div>
+      <div class="adm-panel-sub">Paste previously exported JSON to restore your work session.</div>
+
+      <div class="adm-section-head">Load from JSON Backup</div>
+      <div class="form-grid full">
+        <div class="field">
+          <label>Paste JSON here</label>
+          <textarea id="import-json" rows="10" placeholder='Paste the JSON backup here…'></textarea>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-bottom:20px">
+        <button class="btn btn-gold" onclick="loadImport()">Load Data</button>
+        <button class="btn btn-green" onclick="exportJSON()">⬇ Backup as JSON</button>
+      </div>
+      <p style="font-size:.85rem;color:var(--text3);font-style:italic">
+        Use "Backup as JSON" to save your current work, and "Load Data" to restore it next time.
+      </p>
+    </div>
+
+  </main>
+</div>
+
+<div id="toast">Saved!</div>
+
+<script>
+/* ════════════════════════════════
+   State
+════════════════════════════════ */
+let DB = {
+  dynasties: [],   // [{id, name, era, period, founder, sig, rulers:[]}]
+  battles:   [],   // [{id, icon, year, name, between, summary, d:{...}}]
+  articles:  [],   // [{id, cat, title, subtitle, img, excerpt, body:[]}]
+  dyks:      []    // [string]
+};
+
+let currentRulers = [];
+let currentArticleBlocks = [];
+let currentStars = 3;
+
+/* ════════════════════════════════
+   Navigation
+════════════════════════════════ */
+function showPanel(name) {
+  document.querySelectorAll('.adm-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.adm-nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+
+  if (name === 'export') generateExport();
+}
+
+/* ════════════════════════════════
+   Toast
+════════════════════════════════ */
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ════════════════════════════════
+   Slugify
+════════════════════════════════ */
+function slug(str) {
+  return str.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+}
+
+/* ════════════════════════════════
+   STARS
+════════════════════════════════ */
+function setStar(n) {
+  currentStars = n;
+  document.querySelectorAll('#ruler-stars-ui .star-btn').forEach(b => {
+    b.classList.toggle('on', parseInt(b.dataset.v) <= n);
+  });
+}
+
+/* ════════════════════════════════
+   DYNASTIES
+════════════════════════════════ */
+function addRulerToForm() {
+  const name  = document.getElementById('ruler-name').value.trim();
+  const reign = document.getElementById('ruler-reign').value.trim();
+  const desc  = document.getElementById('ruler-desc').value.trim();
+  if (!name) { toast('Enter a ruler name'); return; }
+  currentRulers.push({ name, reign, desc, stars: currentStars });
+  renderRulerList();
+  document.getElementById('ruler-name').value  = '';
+  document.getElementById('ruler-reign').value = '';
+  document.getElementById('ruler-desc').value  = '';
+  setStar(3);
+  toast('Ruler added ✓');
+}
+
+function renderRulerList() {
+  const el = document.getElementById('ruler-list-form');
+  if (!currentRulers.length) { el.innerHTML = ''; return; }
+  el.innerHTML = currentRulers.map((r, i) => `
+    <div class="ruler-item">
+      <div>
+        <div class="ruler-item-name">${r.name}</div>
+        <div class="ruler-item-reign">${r.reign} · ${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</div>
+      </div>
+      <button class="btn btn-red btn-sm" onclick="removeRuler(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeRuler(i) { currentRulers.splice(i, 1); renderRulerList(); }
+function clearRulerForm() {
+  currentRulers = [];
+  renderRulerList();
+  document.getElementById('ruler-name').value = '';
+  document.getElementById('ruler-reign').value = '';
+  document.getElementById('ruler-desc').value = '';
+}
+
+function saveDynasty() {
+  const name = document.getElementById('dyn-name').value.trim();
+  if (!name) { toast('Dynasty name is required'); return; }
+  const d = {
+    id:      slug(name),
+    name,
+    era:     document.getElementById('dyn-era').value,
+    period:  document.getElementById('dyn-period').value.trim(),
+    founder: document.getElementById('dyn-founder').value.trim() || 'Ashutosh Kesari',
+    sig:     document.getElementById('dyn-sig').value.trim(),
+    rulers:  [...currentRulers]
+  };
+  // Replace if same id exists
+  const idx = DB.dynasties.findIndex(x => x.id === d.id);
+  if (idx >= 0) DB.dynasties[idx] = d;
+  else DB.dynasties.push(d);
+  renderDynastyList();
+  clearDynastyForm();
+  toast('Dynasty saved ✓');
+}
+
+function clearDynastyForm() {
+  ['dyn-name','dyn-period','dyn-founder','dyn-sig'].forEach(id => document.getElementById(id).value = '');
+  currentRulers = [];
+  renderRulerList();
+}
+
+function renderDynastyList() {
+  const el = document.getElementById('dyn-list');
+  document.getElementById('dyn-count').textContent = DB.dynasties.length;
+  if (!DB.dynasties.length) { el.innerHTML = '<div class="empty-state">No dynasties added yet.</div>'; return; }
+  el.innerHTML = DB.dynasties.map((d, i) => `
+    <div class="item-card">
+      <div class="item-card-body">
+        <div class="item-card-title">${d.name} <span style="color:var(--text3);font-size:.7rem">[${d.era}]</span></div>
+        <div class="item-card-sub">${d.period} · ${d.rulers.length} ruler(s) · Founder: ${d.founder}</div>
+      </div>
+      <div class="item-card-actions">
+        <button class="btn btn-red btn-sm" onclick="deleteDynasty(${i})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function deleteDynasty(i) { DB.dynasties.splice(i, 1); renderDynastyList(); toast('Deleted'); }
+
+/* ════════════════════════════════
+   BATTLES
+════════════════════════════════ */
+function saveBattle() {
+  const name = document.getElementById('bat-name').value.trim();
+  if (!name) { toast('Battle name is required'); return; }
+  const b = {
+    id:      slug(name),
+    icon:    document.getElementById('bat-icon').value.trim() || '⚔️',
+    year:    document.getElementById('bat-year').value.trim(),
+    name,
+    between: document.getElementById('bat-between').value.trim(),
+    summary: document.getElementById('bat-summary').value.trim(),
+    d: {
+      date:  document.getElementById('bat-date').value.trim(),
+      loc:   document.getElementById('bat-loc').value.trim(),
+      out:   document.getElementById('bat-out').value.trim(),
+      cmd:   document.getElementById('bat-cmd').value.trim(),
+      str:   document.getElementById('bat-str').value.trim(),
+      strat: document.getElementById('bat-strat').value.trim(),
+      turn:  document.getElementById('bat-turn').value.trim(),
+      cas:   document.getElementById('bat-cas').value.trim(),
+      sig:   document.getElementById('bat-sig').value.trim(),
+      rel:   []
+    }
+  };
+  const idx = DB.battles.findIndex(x => x.id === b.id);
+  if (idx >= 0) DB.battles[idx] = b; else DB.battles.push(b);
+  renderBattleList();
+  clearBattleForm();
+  toast('Battle saved ✓');
+}
+
+function clearBattleForm() {
+  ['bat-name','bat-year','bat-icon','bat-date','bat-loc','bat-out',
+   'bat-between','bat-cmd','bat-str','bat-summary','bat-strat','bat-turn','bat-cas','bat-sig']
+  .forEach(id => document.getElementById(id).value = '');
+}
+
+function renderBattleList() {
+  const el = document.getElementById('bat-list');
+  document.getElementById('bat-count').textContent = DB.battles.length;
+  if (!DB.battles.length) { el.innerHTML = '<div class="empty-state">No battles added yet.</div>'; return; }
+  el.innerHTML = DB.battles.map((b, i) => `
+    <div class="item-card">
+      <div class="item-card-body">
+        <div class="item-card-title">${b.icon} ${b.name}</div>
+        <div class="item-card-sub">${b.year} · ${b.between}</div>
+      </div>
+      <div class="item-card-actions">
+        <button class="btn btn-red btn-sm" onclick="deleteBattle(${i})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function deleteBattle(i) { DB.battles.splice(i, 1); renderBattleList(); toast('Deleted'); }
+
+/* ════════════════════════════════
+   ARTICLES
+════════════════════════════════ */
+document.getElementById('art-block-type').addEventListener('change', renderBlockFields);
+
+function renderBlockFields() {
+  const type = document.getElementById('art-block-type').value;
+  const el   = document.getElementById('art-block-fields');
+  if (type === 'p') {
+    el.innerHTML = `<div class="form-grid full"><div class="field"><label>Paragraph Text</label><textarea id="block-text" rows="4" placeholder="Write your paragraph…"></textarea></div></div>`;
+  } else if (type === 'h3') {
+    el.innerHTML = `<div class="form-grid full"><div class="field"><label>Heading Text</label><input type="text" id="block-text" placeholder="Section heading…"/></div></div>`;
+  } else if (type === 'quote') {
+    el.innerHTML = `<div class="form-grid full"><div class="field"><label>Quote Text</label><textarea id="block-text" rows="3" placeholder="Pull quote…"></textarea></div></div>`;
+  } else if (type === 'img') {
+    el.innerHTML = `
+      <div class="form-grid full">
+        <div class="field"><label>Image URL</label><input type="text" id="block-src" placeholder="https://…"/></div>
+        <div class="field"><label>Alt Text</label><input type="text" id="block-alt" placeholder="Describe the image"/></div>
+        <div class="field"><label>Caption</label><input type="text" id="block-caption" placeholder="Caption shown below image"/></div>
+      </div>`;
+  }
+}
+renderBlockFields(); // init
+
+function addArticleBlock() {
+  const type = document.getElementById('art-block-type').value;
+  let block;
+  if (type === 'p' || type === 'h3' || type === 'quote') {
+    const text = document.getElementById('block-text').value.trim();
+    if (!text) { toast('Enter text for block'); return; }
+    block = { type, text };
+  } else {
+    const src = (document.getElementById('block-src') || {}).value || '';
+    block = { type: 'img', src, alt: (document.getElementById('block-alt')||{}).value||'', caption: (document.getElementById('block-caption')||{}).value||'' };
+  }
+  currentArticleBlocks.push(block);
+  renderArticleBlocks();
+  renderBlockFields();
+  toast('Block added ✓');
+}
+
+function renderArticleBlocks() {
+  const el = document.getElementById('art-body-blocks');
+  if (!currentArticleBlocks.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div style="margin-bottom:12px">` + currentArticleBlocks.map((b, i) => `
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border)">
+      <span style="font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.18em;color:var(--saff);text-transform:uppercase;white-space:nowrap;margin-top:3px">${b.type}</span>
+      <span style="flex:1;font-size:.85rem;color:var(--text2)">${b.type==='img' ? '🖼 '+b.src.substring(0,60) : b.text.substring(0,80)}…</span>
+      <button class="btn btn-red btn-sm" onclick="removeBlock(${i})">✕</button>
+    </div>
+  `).join('') + `</div>`;
+}
+
+function removeBlock(i) { currentArticleBlocks.splice(i,1); renderArticleBlocks(); }
+
+function saveArticle() {
+  const title = document.getElementById('art-title').value.trim();
+  if (!title) { toast('Article title required'); return; }
+  const a = {
+    id:       slug(title),
+    cat:      document.getElementById('art-cat').value.trim(),
+    title,
+    subtitle: document.getElementById('art-subtitle').value.trim(),
+    img:      document.getElementById('art-img').value.trim(),
+    imgAlt:   title,
+    excerpt:  document.getElementById('art-excerpt').value.trim(),
+    body:     [...currentArticleBlocks]
+  };
+  const idx = DB.articles.findIndex(x => x.id === a.id);
+  if (idx >= 0) DB.articles[idx] = a; else DB.articles.push(a);
+  renderArticleList();
+  clearArticleForm();
+  toast('Article saved ✓');
+}
+
+function clearArticleForm() {
+  ['art-title','art-cat','art-subtitle','art-img','art-excerpt'].forEach(id => document.getElementById(id).value='');
+  currentArticleBlocks = [];
+  renderArticleBlocks();
+}
+
+function renderArticleList() {
+  const el = document.getElementById('art-list');
+  document.getElementById('art-count').textContent = DB.articles.length;
+  if (!DB.articles.length) { el.innerHTML='<div class="empty-state">No articles added yet.</div>'; return; }
+  el.innerHTML = DB.articles.map((a,i)=>`
+    <div class="item-card">
+      <div class="item-card-body">
+        <div class="item-card-title">${a.title}</div>
+        <div class="item-card-sub">${a.cat} · ${a.body.length} blocks</div>
+      </div>
+      <div class="item-card-actions">
+        <button class="btn btn-red btn-sm" onclick="deleteArticle(${i})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+function deleteArticle(i) { DB.articles.splice(i,1); renderArticleList(); toast('Deleted'); }
+
+/* ════════════════════════════════
+   DYK
+════════════════════════════════ */
+function saveDyk() {
+  const text = document.getElementById('dyk-text').value.trim();
+  if (!text) { toast('Enter a fact'); return; }
+  DB.dyks.push(text);
+  document.getElementById('dyk-text').value = '';
+  renderDykList();
+  toast('Fact added ✓');
+}
+
+function renderDykList() {
+  const el = document.getElementById('dyk-list');
+  document.getElementById('dyk-count').textContent = DB.dyks.length;
+  if (!DB.dyks.length) { el.innerHTML='<div class="empty-state">No facts added yet.</div>'; return; }
+  el.innerHTML = DB.dyks.map((d,i)=>`
+    <div class="item-card">
+      <div class="item-card-body"><div class="item-card-sub">${d.substring(0,120)}…</div></div>
+      <div class="item-card-actions"><button class="btn btn-red btn-sm" onclick="deleteDyk(${i})">✕</button></div>
+    </div>
+  `).join('');
+}
+function deleteDyk(i) { DB.dyks.splice(i,1); renderDykList(); toast('Deleted'); }
+
+/* ════════════════════════════════
+   EXPORT
+════════════════════════════════ */
+function jstr(v) { return JSON.stringify(v, null, 0); }
+function qstr(s) { return "'" + String(s).replace(/'/g, "\\'") + "'"; }
+
+function generateExport() {
+  // Group dynasties by era
+  const eras = { ancient: [], medieval: [], modern: [] };
+  DB.dynasties.forEach(d => { if (eras[d.era]) eras[d.era].push(d); });
+
+  function rulerCode(r) {
+    return `        { name: ${qstr(r.name)}, reign: ${qstr(r.reign)}, desc: ${qstr(r.desc)}, stars: ${r.stars} }`;
+  }
+  function dynCode(d) {
+    return `    {\n      id: ${qstr(d.id)}, period: ${qstr(d.period)},\n      name: ${qstr(d.name)}, founder: ${qstr(d.founder)},\n      sig: ${qstr(d.sig)},\n      rulers: [\n${d.rulers.map(rulerCode).join(',\n')}\n      ]\n    }`;
+  }
+  function batCode(b) {
+    return `  {\n    id: ${qstr(b.id)}, icon: ${qstr(b.icon)}, year: ${qstr(b.year)},\n    name: ${qstr(b.name)},\n    between: ${qstr(b.between)},\n    summary: ${qstr(b.summary)},\n    d: {\n      date: ${qstr(b.d.date)}, loc: ${qstr(b.d.loc)}, out: ${qstr(b.d.out)},\n      cmd: ${qstr(b.d.cmd)},\n      str: ${qstr(b.d.str)},\n      strat: ${qstr(b.d.strat)},\n      turn: ${qstr(b.d.turn)},\n      cas: ${qstr(b.d.cas)},\n      sig: ${qstr(b.d.sig)},\n      rel: []\n    }\n  }`;
+  }
+  function artBodyCode(blocks) {
+    return blocks.map(b => {
+      if (b.type === 'img') return `      { type: 'img', src: ${qstr(b.src)}, alt: ${qstr(b.alt)}, caption: ${qstr(b.caption)} }`;
+      return `      { type: ${qstr(b.type)}, text: ${qstr(b.text)} }`;
+    }).join(',\n');
+  }
+  function artCode(a) {
+    return `  {\n    id: ${qstr(a.id)},\n    cat: ${qstr(a.cat)},\n    title: ${qstr(a.title)},\n    subtitle: ${qstr(a.subtitle)},\n    img: ${qstr(a.img)},\n    imgAlt: ${qstr(a.imgAlt)},\n    excerpt: ${qstr(a.excerpt)},\n    body: [\n${artBodyCode(a.body)}\n    ]\n  }`;
+  }
+
+  const out = `/* ════════════════════════════════════════
+   data.js — Generated by BHARATAM Admin Panel
+   ${new Date().toLocaleString()}
+════════════════════════════════════════ */
+
+const DYN = {
+  ancient: [\n${eras.ancient.map(dynCode).join(',\n')}\n  ],
+  medieval: [\n${eras.medieval.map(dynCode).join(',\n')}\n  ],
+  modern: [\n${eras.modern.map(dynCode).join(',\n')}\n  ]
+};
+
+const BATTLES = [\n${DB.battles.map(batCode).join(',\n')}\n];
+
+const ARTICLES = [\n${DB.articles.map(artCode).join(',\n')}\n];
+
+const DYKS = [\n${DB.dyks.map(s => `  ${qstr(s)}`).join(',\n')}\n];
+`;
+  document.getElementById('export-box').textContent = out;
+  return out;
+}
+
+function downloadExport() {
+  const code = generateExport();
+  const blob = new Blob([code], { type: 'text/javascript' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'data.js';
+  a.click();
+  toast('Download started ✓');
+}
+
+function copyExport() {
+  const code = document.getElementById('export-box').textContent;
+  navigator.clipboard.writeText(code).then(() => toast('Copied to clipboard ✓'));
+}
+
+/* ════════════════════════════════
+   IMPORT / BACKUP
+════════════════════════════════ */
+function exportJSON() {
+  const json = JSON.stringify(DB, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'bharatam-backup.json';
+  a.click();
+  toast('Backup downloaded ✓');
+}
+
+function loadImport() {
+  const raw = document.getElementById('import-json').value.trim();
+  if (!raw) { toast('Paste JSON first'); return; }
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed.dynasties) DB.dynasties = parsed.dynasties;
+    if (parsed.battles)   DB.battles   = parsed.battles;
+    if (parsed.articles)  DB.articles  = parsed.articles;
+    if (parsed.dyks)      DB.dyks      = parsed.dyks;
+    renderDynastyList(); renderBattleList(); renderArticleList(); renderDykList();
+    document.getElementById('import-json').value = '';
+    toast('Data loaded successfully ✓');
+  } catch(e) {
+    toast('Invalid JSON — check format');
+  }
+}
+</script>
+</body>
+</html>
