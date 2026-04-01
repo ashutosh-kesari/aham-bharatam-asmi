@@ -124,6 +124,7 @@ export default function Home() {
   const mobileNavTimerRef = useRef(null);
   const chatTimerRef = useRef(null);
   const dykTimerRef = useRef(null);
+  const dykDismissedRef = useRef(false);
 
   const allDynasties = buildAllDynasties(siteData);
   const favoriteDynasties = allDynasties.filter((dynasty) => favorites.includes(dynasty.id));
@@ -222,11 +223,11 @@ export default function Home() {
   const navigateTo = useCallback(
     (page) => {
       setCurrentPage(page);
-      if (page !== 'home' && !showDyk && !dykDismissed) {
+      if (page !== 'home' && !showDyk && !dykDismissedRef.current) {
         setTimeout(() => setShowDyk(true), 500);
       }
     },
-    [showDyk, dykDismissed],
+    [showDyk],
   );
 
   const handleDynastyClick = useCallback(
@@ -1244,8 +1245,9 @@ export default function Home() {
           className="dyk-x"
           onClick={() => {
             clearInterval(dykTimerRef.current);
-            setShowDyk(false);
+            dykDismissedRef.current = true;
             setDykDismissed(true);
+            setShowDyk(false);
           }}
         >
           ✕
