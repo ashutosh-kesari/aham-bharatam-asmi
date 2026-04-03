@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { DYN, BATTLES, ARTICLES, DYKS, BATTLE_IMAGES } from '../lib/data';
+import { DEFAULT_MORE_APPS } from '../lib/appsData';
 import { getSiteData } from '../lib/supabaseData';
 import { enrichDynasty, getDynastyHref, ERA_LABELS } from '../lib/dynastyUtils';
 import { HISTORICAL_MAPS } from '../lib/historicalMaps';
@@ -75,6 +76,7 @@ export default function Home() {
     DYKS,
     MAPS: HISTORICAL_MAPS,
     QUIZZES: DEFAULT_QUIZ_QUESTIONS,
+    APPS: DEFAULT_MORE_APPS,
   });
   const [currentPage, setCurrentPage] = useState('home');
   const [showDyk, setShowDyk] = useState(false);
@@ -136,6 +138,7 @@ export default function Home() {
   );
   const mapData = siteData.MAPS?.length ? siteData.MAPS : HISTORICAL_MAPS;
   const quizQuestions = siteData.QUIZZES?.length ? siteData.QUIZZES : DEFAULT_QUIZ_QUESTIONS;
+  const appsData = siteData.APPS?.length ? siteData.APPS : DEFAULT_MORE_APPS;
   const dynastiesByEra = ERA_KEYS.reduce((accumulator, era) => {
     accumulator[era] = filteredDynasties.filter((dynasty) => dynasty.era === era);
     return accumulator;
@@ -1108,6 +1111,125 @@ export default function Home() {
     </div>
   );
 
+  const renderAppCard = (app, index) => (
+    <a
+      key={app.id || app.url || index}
+      className="more-app-card"
+      href={app.url}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <div className="more-app-logo-wrap">
+        <img className="more-app-logo" src={app.image} alt={app.imageAlt || app.name} loading="lazy" />
+      </div>
+      <div className="more-app-body">
+        <div className="more-app-name">{app.name}</div>
+        <p className="more-app-description">{app.description}</p>
+        <div className="more-app-link">Open App ↗</div>
+      </div>
+    </a>
+  );
+
+  const dismissDyk = () => {
+    clearInterval(dykTimerRef.current);
+    dykDismissedRef.current = true;
+    setDykDismissed(true);
+    setShowDyk(false);
+  };
+
+  const dykVisible = showDyk && !dykDismissed;
+
+  const renderDykBox = ({ extraClass = '', includeIds = false } = {}) => (
+    <div className={`dyk ${extraClass} ${dykVisible ? 'on' : ''}`.trim()} {...(includeIds ? { id: 'dyk' } : {})}>
+      <button className="dyk-x" onClick={dismissDyk} type="button" aria-label="Dismiss did you know panel">
+        ✕
+      </button>
+      <div className="dyk-lb">⚡ Did You Know?</div>
+      <div className={`dyk-tx${dykFading ? ' fading' : ''}`} {...(includeIds ? { id: 'dyk-tx' } : {})}>
+        {dykText || (isMounted ? DYKS[0] : '')}
+      </div>
+    </div>
+  );
+
+  const renderChatShell = (extraClass = '') => (
+    <div className={`chat-shell ${extraClass} ${chatPhase}`.trim()}>
+      <button
+        className={`chat-overlay ${chatPhase}`}
+        onClick={closeChat}
+        aria-label="Close Bharatam AI chat"
+        type="button"
+      ></button>
+      <div className={`chat-panel ${chatPhase}`} aria-hidden={chatPhase === 'closed'}>
+        <div className="chat-panel-head">
+          <div>
+            <div className="chat-panel-eye">Bharatam AI Guide</div>
+            <strong>History Assistant</strong>
+          </div>
+          <button className="chat-close" onClick={closeChat} type="button">
+            ✕
+          </button>
+        </div>
+        <div className="chat-messages">
+          {chatMessages.map((message, index) => (
+            <div key={`${message.role}-${index}`} className={`chat-message ${message.role}${message.pending ? ' pending' : ''}`}>
+              <p className="chat-message-text">{message.text}</p>
+              {Array.isArray(message.sources) && message.sources.length > 0 && (
+                <div className="chat-sources">
+                  <span className="chat-sources-label">🌐 Sources</span>
+                  <ul className="chat-sources-list">
+                    {message.sources.map((src, si) => (
+                      <li key={si} className="chat-source-item">
+                        <a href={src.url} target="_blank" rel="noopener noreferrer" className="chat-source-link">
+                          <span className="chat-source-title">{src.title}</span>
+                          {src.snippet && <span className="chat-source-snippet">{src.snippet}</span>}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="chat-quick-actions">
+          <button className="text-link" onClick={() => performChatAction({ type: 'navigate', page: 'maps' })} type="button">
+            Open maps
+          </button>
+          <button className="text-link" onClick={() => performChatAction({ type: 'navigate', page: 'quiz' })} type="button">
+            Start quiz
+          </button>
+          <button className="text-link" onClick={() => handleDynastyClick('maurya')} type="button">
+            Show Maurya
+          </button>
+        </div>
+        <div className="chat-input-row">
+          <input
+            className="chat-input"
+            value={chatInput}
+            onChange={(event) => setChatInput(event.target.value)}
+            disabled={chatLoading}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') submitChatMessage();
+            }}
+            placeholder="Ask about Indian or world history..."
+          />
+          <button className="chat-send" onClick={submitChatMessage} disabled={chatLoading} type="button">
+            {chatLoading ? '...' : 'Send'}
+          </button>
+        </div>
+      </div>
+      <button
+        className={`chat-launcher ${chatOpen ? 'active' : ''}`}
+        onClick={toggleChat}
+        aria-label={chatOpen ? 'Close Bharatam AI chat' : 'Open Bharatam AI chat'}
+        type="button"
+      >
+        <span>AI Chatbot</span>
+        <small>{chatOpen ? 'Close' : 'Ask Bharatam AI'}</small>
+      </button>
+    </div>
+  );
+
   return (
     <>
       {splashVisible && (
@@ -1123,94 +1245,9 @@ export default function Home() {
         </div>
       )}
 
-      <div className={`dyk ${showDyk && !dykDismissed ? 'on' : ''}`} id="dyk">
-        <button
-          className="dyk-x"
-          onClick={() => {
-            clearInterval(dykTimerRef.current);
-            dykDismissedRef.current = true;
-            setDykDismissed(true);
-            setShowDyk(false);
-          }}
-        >
-          ✕
-        </button>
-        <div className="dyk-lb">⚡ Did You Know?</div>
-        <div className={`dyk-tx${dykFading ? ' fading' : ''}`} id="dyk-tx">
-          {dykText || (isMounted ? DYKS[0] : '')}
-        </div>
-      </div>
+      {renderDykBox({ extraClass: currentPage === 'home' ? 'home-active' : '', includeIds: true })}
 
-      <div className={`chat-shell ${chatPhase}`}>
-        <div className={`chat-panel ${chatPhase}`} aria-hidden={chatPhase === 'closed'}>
-          <div className="chat-panel-head">
-            <div>
-              <div className="chat-panel-eye">Bharatam AI Guide</div>
-              <strong>History Assistant</strong>
-            </div>
-            <button className="chat-close" onClick={closeChat}>
-              ✕
-            </button>
-          </div>
-          <div className="chat-messages">
-            {chatMessages.map((message, index) => (
-              <div key={`${message.role}-${index}`} className={`chat-message ${message.role}${message.pending ? ' pending' : ''}`}>
-                <p className="chat-message-text">{message.text}</p>
-                {Array.isArray(message.sources) && message.sources.length > 0 && (
-                  <div className="chat-sources">
-                    <span className="chat-sources-label">🌐 Sources</span>
-                    <ul className="chat-sources-list">
-                      {message.sources.map((src, si) => (
-                        <li key={si} className="chat-source-item">
-                          <a href={src.url} target="_blank" rel="noopener noreferrer" className="chat-source-link">
-                            <span className="chat-source-title">{src.title}</span>
-                            {src.snippet && <span className="chat-source-snippet">{src.snippet}</span>}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="chat-quick-actions">
-            <button className="text-link" onClick={() => performChatAction({ type: 'navigate', page: 'maps' })}>
-              Open maps
-            </button>
-            <button className="text-link" onClick={() => performChatAction({ type: 'navigate', page: 'quiz' })}>
-              Start quiz
-            </button>
-            <button className="text-link" onClick={() => handleDynastyClick('maurya')}>
-              Show Maurya
-            </button>
-          </div>
-          <div className="chat-input-row">
-            <input
-              className="chat-input"
-              value={chatInput}
-              onChange={(event) => setChatInput(event.target.value)}
-              disabled={chatLoading}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') submitChatMessage();
-              }}
-              placeholder="Ask about Indian or world history..."
-            />
-            <button className="chat-send" onClick={submitChatMessage} disabled={chatLoading}>
-              {chatLoading ? '...' : 'Send'}
-            </button>
-          </div>
-        </div>
-        <button
-          className={`chat-launcher ${chatOpen ? 'active' : ''}`}
-          onClick={toggleChat}
-          aria-label={chatOpen ? 'Close Bharatam AI chat' : 'Open Bharatam AI chat'}
-          type="button"
-        >
-          <span>AI Chatbot</span>
-          <small>{chatOpen ? 'Close' : 'Ask Bharatam AI'}</small>
-        </button>
-      </div>
+      {renderChatShell(currentPage === 'home' ? 'home-active' : '')}
 
       <nav id="nav" className={navSolid ? 'solid' : ''}>
         <div
@@ -1247,6 +1284,14 @@ export default function Home() {
             <span className="nav-menu-line"></span>
             <span className="nav-menu-line"></span>
             <span className="nav-menu-line"></span>
+          </button>
+          <button
+            className={`nav-btn nav-ai-btn ${chatOpen ? 'on' : ''}`}
+            onClick={toggleChat}
+            aria-label={chatOpen ? 'Close Bharatam AI chat' : 'Open Bharatam AI chat'}
+            type="button"
+          >
+            AI
           </button>
           <button
             className="nav-btn"
@@ -1330,13 +1375,13 @@ export default function Home() {
               </div>
             </div>
           </button>
-          <button type="button" className="h-card" id="hcb" onClick={() => navigateTo('dynasties')}>
+          <button type="button" className="h-card" id="hcb" onClick={() => navigateTo('battles')}>
             <div className="h-card-inner">
               <div className="h-card-ico ico-b">⏳</div>
               <div className="h-card-body">
-                <div className="h-card-ttl">Dynasties of India</div>
-                <div className="h-card-dsc">Browse India&apos;s ruling houses through a responsive overview built for every screen.</div>
-                <div className="h-card-cta">Open Dynasties →</div>
+                <div className="h-card-ttl">Epic Battles of Bharat</div>
+                <div className="h-card-dsc">Open the battle archive and trace the wars, turning points, and empires that changed India.</div>
+                <div className="h-card-cta">Open Battles →</div>
               </div>
             </div>
           </button>
@@ -1351,6 +1396,21 @@ export default function Home() {
             </div>
           </button>
         </div>
+
+        <section className="more-apps-home">
+          <div className="more-apps-head">
+            <div className="more-apps-eye">Explore More Apps by Us</div>
+            <div className="more-apps-title">Built Beyond Bharatam</div>
+            <p className="more-apps-copy">
+              Explore the other products designed and launched by Ashutosh Kesari.
+            </p>
+          </div>
+          <div className="more-apps-grid">
+            {appsData.map(renderAppCard)}
+          </div>
+        </section>
+
+        <div className="home-mobile-dyk">{renderDykBox({ extraClass: 'home-inline' })}</div>
 
         <div className="s-cue" id="scue">
           <div className="s-cue-tx">Explore Further</div>

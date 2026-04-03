@@ -62,3 +62,11 @@ export const supabase = supabaseUrl && supabaseKey
 // - answer: text
 // - options: jsonb
 // - explanation: text
+//
+// Table: apps
+// - id: text (primary key)
+// - name: text
+// - url: text
+// - description: text
+// - image_url: text
+// - image_alt: text

@@ -164,6 +164,13 @@ body::after {
   cursor:pointer; display:flex; align-items:center; justify-content:center;
   transition:all .3s;
 }
+.nav-ai-btn {
+  display: none;
+  font-family: 'Cinzel', serif;
+  font-size: .56rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
 .nav-menu-btn {
   display:none;
   width:44px;
@@ -299,12 +306,13 @@ body::after {
   animation:mobileNavGenieClose .46s cubic-bezier(.55,.02,.78,.19) forwards;
 }
 
-@media (max-width:700px) {
+@media (max-width:1024px) {
   .nav-links { display:none; }
   .nav-brand { font-size:.95rem; }
   .nav-menu-btn { display:flex; }
   .nav-acts { gap:6px; }
   .nav-btn { width:34px; height:34px; }
+  .nav-ai-btn { display:flex; }
 }
 
 /* ===== SHARED PAGE HEADER ===== */
@@ -405,6 +413,88 @@ body::after {
   min-height: calc(100dvh - 220px);
 }
 
+#he-aham {
+  animation: heroFadeUp .7s ease 2.35s both;
+}
+
+#he1 {
+  animation: heroTitleIn 1.05s cubic-bezier(.2,.8,.2,1) 2.52s both;
+}
+
+#he2 {
+  animation: heroFadeIn .6s ease 2.88s both;
+}
+
+#he3 {
+  animation: heroFadeUp .85s ease 3.02s both;
+}
+
+#he4 {
+  animation: heroFadeUp .75s ease 3.16s both;
+}
+
+#he5 {
+  animation: heroFadeUp .6s ease 3.28s both;
+}
+
+#hca {
+  animation: heroCardIn .75s ease 3.38s both;
+}
+
+#hcb {
+  animation: heroCardIn .75s ease 3.54s both;
+}
+
+#hcc {
+  animation: heroCardIn .75s ease 3.7s both;
+}
+
+#scue {
+  animation: heroFadeIn .7s ease 3.9s both;
+}
+
+@keyframes heroFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes heroFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes heroTitleIn {
+  from {
+    opacity: 0;
+    transform: translateY(36px) scale(.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes heroCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* AHAM */
 .h-aham {
   font-family: 'Cinzel', serif;
@@ -487,6 +577,10 @@ body::after {
   flex-wrap: wrap;
 }
 
+.home-mobile-dyk {
+  display: none;
+}
+
 .h-card {
   display:block;
   width: 240px;
@@ -498,6 +592,9 @@ body::after {
   text-align:left;
   color:inherit;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
   opacity: 0;
   transform: translateY(22px);
 }
@@ -507,6 +604,16 @@ body::after {
   overflow:hidden; background:rgba(10,8,4,.68);
   backdrop-filter:blur(4px);
   transition:border-color .35s,transform .35s cubic-bezier(.4,0,.2,1);
+}
+.h-card-inner,
+.h-card-inner::before,
+.h-card-ico,
+.h-card-ico::after,
+.h-card-body,
+.h-card-ttl,
+.h-card-dsc,
+.h-card-cta {
+  pointer-events: none;
 }
 .h-card:hover .h-card-inner { border-color:var(--bg-gold2); transform:translateY(-5px); }
 .h-card-inner::before {
@@ -544,6 +651,113 @@ body::after {
 }
 .h-card:hover .h-card-cta { gap:12px; }
 
+.more-apps-home {
+  position: relative;
+  z-index: 20;
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 10px 0 42px;
+}
+
+.more-apps-head {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.more-apps-eye {
+  font-family: 'Cinzel', serif;
+  font-size: .54rem;
+  letter-spacing: .34em;
+  text-transform: uppercase;
+  color: var(--saffron);
+  margin-bottom: 10px;
+}
+
+.more-apps-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(1.3rem, 3vw, 2.3rem);
+  color: var(--gold-lt);
+  margin-bottom: 10px;
+}
+
+.more-apps-copy {
+  max-width: 620px;
+  margin: 0 auto;
+  color: var(--text2);
+  font-size: .98rem;
+  line-height: 1.7;
+}
+
+.more-apps-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.more-app-card {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  text-decoration: none;
+  border: 1px solid rgba(200,148,42,.22);
+  background: linear-gradient(145deg, rgba(16,12,6,.92), rgba(9,7,4,.97));
+  padding: 18px;
+  transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease;
+}
+
+.more-app-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(200,148,42,.48);
+  box-shadow: 0 12px 26px rgba(0,0,0,.26);
+}
+
+.more-app-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  padding: 12px;
+  border: 1px solid rgba(200,148,42,.14);
+  background: radial-gradient(circle at center, rgba(200,148,42,.08), rgba(0,0,0,0));
+}
+
+.more-app-logo {
+  width: 100%;
+  max-width: 112px;
+  max-height: 112px;
+  object-fit: contain;
+  display: block;
+}
+
+.more-app-body {
+  min-width: 0;
+}
+
+.more-app-name {
+  font-family: 'Cinzel', serif;
+  font-size: .9rem;
+  letter-spacing: .12em;
+  color: var(--gold-lt);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.more-app-description {
+  margin: 0 0 12px;
+  color: var(--text2);
+  line-height: 1.65;
+  font-size: .92rem;
+}
+
+.more-app-link {
+  font-family: 'Cinzel', serif;
+  font-size: .56rem;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
 /* Scroll cue */
 .s-cue {
   position:absolute; bottom:22px; left:50%;
@@ -574,40 +788,78 @@ body::after {
 }
 
 @media (max-width:1024px) {
-  .h-cards {
-    padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px));
+  .hero-wrap {
+    flex: 0 0 auto;
+    min-height: 0;
+    padding-bottom: 16px;
   }
-  .dyk {
+  .home-mobile-dyk {
+    display: grid;
+    gap: 12px;
+    width: min(100%, 440px);
+    padding: 0 16px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 730;
+  }
+  .home-mobile-dyk {
+    padding-top: 8px;
+    padding-bottom: 20px;
+  }
+  .dyk.home-active {
+    display: none;
+  }
+  .home-mobile-dyk .dyk {
+    width: 100%;
+  }
+  .home-mobile-dyk .dyk {
+    position: relative;
+    inset: auto;
+    right: auto;
+    bottom: auto;
+    z-index: auto;
+    width: 100%;
+    max-width: none;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+  .h-cards {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+    position: relative;
+    z-index: 720;
+  }
+  .more-apps-home {
+    width: min(100%, calc(100% - 32px));
+    padding-bottom: 28px;
+  }
+  .more-apps-grid {
+    grid-template-columns: 1fr;
+  }
+  .h-card {
+    position: relative;
+    z-index: 721;
+  }
+  #hcc {
     display: none !important;
   }
   .chat-shell {
-    right: 12px;
-    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    inset: 0;
+    right: auto;
+    bottom: auto;
+    padding: calc(var(--nav-h) + 12px) 12px 12px;
+    align-items: center;
+    justify-content: flex-start;
+    pointer-events: none;
+  }
+  .chat-panel {
+    width: min(420px, calc(100vw - 24px));
+    max-height: min(78vh, 620px);
+    transform-origin: center top;
+    pointer-events: auto;
   }
   .chat-launcher {
-    min-width: 58px;
-    width: 58px;
-    height: 58px;
-    padding: 0;
-    border-radius: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .chat-launcher::before {
-    display: none;
-  }
-  .chat-launcher span,
-  .chat-launcher small {
-    display: none;
-  }
-  .chat-launcher::after {
-    content: 'AI';
-    font-family: 'Cinzel', serif;
-    font-size: .74rem;
-    letter-spacing: .18em;
-    color: var(--gold-lt);
-    text-transform: uppercase;
+    display: none !important;
   }
 }
 
@@ -616,6 +868,7 @@ body::after {
   .hero-wrap {
     padding: calc(var(--nav-h) + 32px) 16px 28px;
     min-height: unset;
+    flex: 0 0 auto;
     justify-content: flex-start;
   }
   .h-aham { font-size: clamp(.85rem, 4.5vw, 1.1rem); letter-spacing: .28em; margin-bottom: 4px; }
@@ -624,11 +877,48 @@ body::after {
   .sep-ln { width:28px; }
   .h-sans { font-size:clamp(.95rem,5.5vw,1.4rem); letter-spacing:.22em; }
   .h-tag { font-size:.78rem; letter-spacing:.07em; }
+  .home-mobile-dyk {
+    width: 100%;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .home-mobile-dyk {
+    padding-top: 6px;
+    padding-bottom: 12px;
+  }
   .h-cards {
     flex-direction: column;
     align-items: center;
-    padding: 20px 16px calc(132px + env(safe-area-inset-bottom, 0px));
+    padding: 12px 16px calc(48px + env(safe-area-inset-bottom, 0px));
     gap: 12px;
+  }
+  .more-apps-home {
+    width: 100%;
+    padding: 8px 16px 20px;
+  }
+  .more-apps-title {
+    font-size: 1.2rem;
+  }
+  .more-apps-copy {
+    font-size: .86rem;
+  }
+  .more-app-card {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 16px;
+  }
+  .more-app-logo-wrap {
+    min-height: 112px;
+  }
+  .more-app-logo {
+    max-width: 90px;
+    max-height: 90px;
+  }
+  .more-app-name {
+    font-size: .76rem;
+  }
+  .more-app-description {
+    font-size: .82rem;
   }
   /* Force cards visible on mobile — intersection observer may not fire */
   .h-card {
@@ -1214,6 +1504,30 @@ body::after {
   position:fixed; right:clamp(12px,3vw,24px); bottom:clamp(12px,3vw,24px); z-index:650;
   display:flex; flex-direction:column; align-items:flex-end; gap:12px;
 }
+.chat-overlay {
+  position:fixed;
+  inset:0;
+  border:0;
+  background:rgba(4,3,2,0);
+  opacity:0;
+  pointer-events:none;
+  backdrop-filter:blur(0) brightness(1);
+  transition:opacity .28s ease, background .28s ease, backdrop-filter .28s ease;
+}
+.chat-overlay.opening,
+.chat-overlay.open,
+.chat-overlay.closing {
+  pointer-events:auto;
+}
+.chat-overlay.opening,
+.chat-overlay.open {
+  opacity:1;
+  background:rgba(4,3,2,.58);
+  backdrop-filter:blur(18px) brightness(.42) saturate(.8);
+}
+.chat-overlay.closing {
+  opacity:0;
+}
 .chat-launcher {
   position:relative; overflow:hidden;
   min-width:190px; border-radius:18px 18px 6px 18px; padding:12px 16px;
@@ -1248,6 +1562,8 @@ body::after {
   box-shadow:0 18px 40px rgba(0,0,0,.5); overflow:hidden;
   transform-origin:100% 100%;
   will-change:transform,opacity,clip-path,filter;
+  position:relative;
+  z-index:1;
 }
 .chat-panel.closed {
   opacity:0; pointer-events:none; filter:blur(6px);
@@ -1509,6 +1825,7 @@ body::after {
   background: #070604;
   display: flex; align-items: center; justify-content: center;
   pointer-events: none;
+  animation: introSplashAutoFade .6s ease 4.2s forwards;
 }
 #intro-canvas {
   position: absolute; inset: 0; width: 100%; height: 100%;
@@ -1542,6 +1859,17 @@ body::after {
 }
 .intro-arrow.launch {
   animation:introArrowLaunch .68s cubic-bezier(.2,.8,.2,1) forwards;
+}
+
+@keyframes introSplashAutoFade {
+  from {
+    opacity: 1;
+    visibility: visible;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
 }
 @keyframes introArrowDraw {
   from { height:0; opacity:0; }

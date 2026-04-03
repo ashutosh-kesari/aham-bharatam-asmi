@@ -8,14 +8,20 @@ export async function GET() {
   }
 
   try {
-    const [dynasties, battles, articles, facts, maps, quizzes] = await Promise.all([
+    const [dynasties, battles, articles, facts, maps, quizzes, apps] = await Promise.all([
       supabase.from('dynasties').select('*').order('name'),
       supabase.from('battles').select('*').order('year'),
       supabase.from('articles').select('*').order('title'),
       supabase.from('facts').select('*'),
       supabase.from('maps').select('*').order('year_label'),
-      supabase.from('quizzes').select('*').order('question')
+      supabase.from('quizzes').select('*').order('question'),
+      supabase.from('apps').select('*').order('name'),
     ]);
+
+    const appsData =
+      apps.error && apps.error.code === '42P01'
+        ? []
+        : (apps.data || []);
 
     return NextResponse.json({
       dynasties: dynasties.data || [],
@@ -23,7 +29,8 @@ export async function GET() {
       articles: articles.data || [],
       facts: facts.data?.map(f => f.content) || [],
       maps: maps.data || [],
-      quizzes: quizzes.data || []
+      quizzes: quizzes.data || [],
+      apps: appsData,
     });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -38,7 +45,7 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
-    const { dynasties, battles, articles, facts, maps, quizzes } = body;
+    const { dynasties, battles, articles, facts, maps, quizzes, apps } = body;
 
     // Clear and insert new data
     if (dynasties) {
@@ -134,6 +141,26 @@ export async function POST(request) {
             answer: q.answer,
             options: q.options || [],
             explanation: q.explanation || '',
+          })),
+        );
+      }
+    }
+
+    if (apps) {
+      const { error: deleteAppsError } = await supabase.from('apps').delete().neq('id', '');
+      if (deleteAppsError && deleteAppsError.code !== '42P01') {
+        throw deleteAppsError;
+      }
+
+      if (apps.length > 0 && !deleteAppsError) {
+        await supabase.from('apps').insert(
+          apps.map((app) => ({
+            id: app.id,
+            name: app.name,
+            url: app.url,
+            description: app.description || '',
+            image_url: app.image || '',
+            image_alt: app.imageAlt || app.name || '',
           })),
         );
       }

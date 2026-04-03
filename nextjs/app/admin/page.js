@@ -4,12 +4,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { DYN, BATTLES, ARTICLES, DYKS } from '../../lib/data';
 import { HISTORICAL_MAPS } from '../../lib/historicalMaps';
 import { DEFAULT_QUIZ_QUESTIONS } from '../../lib/quizData';
+import { DEFAULT_MORE_APPS } from '../../lib/appsData';
 import { getSiteData, saveToSupabase } from '../../lib/supabaseData';
 import { supabase } from '../../lib/supabase';
 
 const STORAGE_KEY = 'bharatam_data';
 const ARTICLE_IMAGE_BUCKET = 'article-images';
-const TABS = ['dynasties', 'battles', 'articles', 'dyks', 'maps', 'quizzes'];
+const TABS = ['dynasties', 'battles', 'articles', 'dyks', 'maps', 'quizzes', 'apps'];
 
 const defaultData = {
   dynasties: [...DYN.ancient, ...DYN.medieval, ...DYN.modern],
@@ -18,6 +19,7 @@ const defaultData = {
   dyks: DYKS,
   maps: HISTORICAL_MAPS,
   quizzes: DEFAULT_QUIZ_QUESTIONS,
+  apps: DEFAULT_MORE_APPS,
 };
 
 const emptyItemByTab = {
@@ -80,6 +82,14 @@ const emptyItemByTab = {
     answer: '',
     explanation: '',
   },
+  apps: {
+    id: '',
+    name: '',
+    url: '',
+    description: '',
+    image: '',
+    imageAlt: '',
+  },
 };
 
 function toStorageData(siteData) {
@@ -94,6 +104,7 @@ function toStorageData(siteData) {
     dyks: siteData.DYKS || [],
     maps: siteData.MAPS || [],
     quizzes: siteData.QUIZZES || [],
+    apps: siteData.APPS || [],
   };
 }
 
@@ -134,6 +145,7 @@ export default function Admin() {
   const [syncStatus, setSyncStatus] = useState('');
   const [formError, setFormError] = useState('');
   const [articleIndex, setArticleIndex] = useState(0);
+  const [editingAppIndex, setEditingAppIndex] = useState(null);
   const [ready, setReady] = useState(false);
   const [session, setSession] = useState(null);
   const [authEmail, setAuthEmail] = useState('');
@@ -196,6 +208,9 @@ export default function Admin() {
 
   useEffect(() => {
     setNewItem(activeTab === 'articles' ? emptyItemByTab.articles : emptyItemByTab[activeTab]);
+    if (activeTab !== 'apps') {
+      setEditingAppIndex(null);
+    }
     setFormError('');
   }, [activeTab]);
 
@@ -236,7 +251,7 @@ export default function Admin() {
     () =>
       currentItems.map((item) => ({
         title: item.name || item.title || item.question || item.yearLabel || item,
-        subtitle: item.period || item.year || item.cat || item.era || item.answer || '',
+        subtitle: item.period || item.year || item.cat || item.era || item.answer || item.url || '',
       })),
     [currentItems],
   );
@@ -350,6 +365,8 @@ export default function Admin() {
     } else if (target.startsWith('block-')) {
       const blockIndex = Number(target.replace('block-', ''));
       updateArticleBlock(blockIndex, (current) => ({ ...current, src: publicUrl }));
+    } else if (target === 'app-image') {
+      setNewItem((current) => ({ ...current, image: publicUrl }));
     }
 
     setUploadingTarget('');
@@ -468,16 +485,37 @@ export default function Admin() {
         };
       }
 
-      setData((current) => ({
-        ...current,
-        [activeTab]: [...current[activeTab], builtItem],
-      }));
+      if (activeTab === 'apps') {
+        builtItem = {
+          id: newItem.id || `app-${Date.now()}`,
+          name: newItem.name || 'App name',
+          url: newItem.url || 'https://example.com',
+          description: newItem.description || 'Short app description',
+          image: newItem.image || '',
+          imageAlt: newItem.imageAlt || newItem.name || 'App logo',
+        };
+      }
+
+      setData((current) => {
+        if (activeTab === 'apps' && editingAppIndex !== null) {
+          return {
+            ...current,
+            apps: current.apps.map((app, index) => (index === editingAppIndex ? builtItem : app)),
+          };
+        }
+
+        return {
+          ...current,
+          [activeTab]: [...current[activeTab], builtItem],
+        };
+      });
 
       if (activeTab === 'articles') {
         setArticleIndex(data.articles.length);
       }
 
       setNewItem(activeTab === 'articles' ? emptyItemByTab.articles : emptyItemByTab[activeTab]);
+      setEditingAppIndex(null);
     } catch (error) {
       setFormError(`Invalid JSON in form: ${error.message}`);
     }
@@ -492,6 +530,35 @@ export default function Admin() {
     if (activeTab === 'articles') {
       setArticleIndex((current) => Math.max(0, Math.min(current, data.articles.length - 2)));
     }
+
+    if (activeTab === 'apps') {
+      setEditingAppIndex((current) => {
+        if (current === null) return current;
+        if (current === index) return null;
+        if (current > index) return current - 1;
+        return current;
+      });
+    }
+  };
+
+  const editApp = (index) => {
+    const app = data.apps?.[index];
+    if (!app) return;
+    setEditingAppIndex(index);
+    setNewItem({
+      id: app.id || '',
+      name: app.name || '',
+      url: app.url || '',
+      description: app.description || '',
+      image: app.image || '',
+      imageAlt: app.imageAlt || '',
+    });
+  };
+
+  const cancelAppEdit = () => {
+    setEditingAppIndex(null);
+    setNewItem(emptyItemByTab.apps);
+    setFormError('');
   };
 
   const createBlankArticle = () => {
@@ -528,6 +595,7 @@ export default function Admin() {
           dyks: imported.dyks || defaultData.dyks,
           maps: imported.maps || defaultData.maps,
           quizzes: imported.quizzes || defaultData.quizzes,
+          apps: imported.apps || defaultData.apps,
         };
         setData(nextData);
         setArticleIndex(0);
@@ -612,6 +680,32 @@ export default function Admin() {
           <textarea placeholder='Options JSON, e.g. ["A","B","C","D"]' value={newItem.optionsJson} onChange={(e) => setNewItem({ ...newItem, optionsJson: e.target.value })} style={{ ...inputStyle, minHeight: 120, fontFamily: 'monospace' }} />
           <input placeholder="Correct answer" value={newItem.answer} onChange={(e) => setNewItem({ ...newItem, answer: e.target.value })} style={inputStyle} />
           <textarea placeholder="Explanation" value={newItem.explanation} onChange={(e) => setNewItem({ ...newItem, explanation: e.target.value })} style={{ ...inputStyle, minHeight: 100 }} />
+        </>
+      );
+    }
+
+    if (activeTab === 'apps') {
+      return (
+        <>
+          <input placeholder="ID" value={newItem.id} onChange={(e) => setNewItem({ ...newItem, id: e.target.value })} style={inputStyle} />
+          <input placeholder="App name" value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} style={inputStyle} />
+          <input placeholder="Website URL" value={newItem.url} onChange={(e) => setNewItem({ ...newItem, url: e.target.value })} style={inputStyle} />
+          <textarea placeholder="Short description" value={newItem.description} onChange={(e) => setNewItem({ ...newItem, description: e.target.value })} style={{ ...inputStyle, minHeight: 90 }} />
+          <input placeholder="Logo image URL" value={newItem.image} onChange={(e) => setNewItem({ ...newItem, image: e.target.value })} style={inputStyle} />
+          <label style={uploadLabelStyle}>
+            {uploadingTarget === 'app-image' ? 'Uploading app logo...' : 'Upload app logo'}
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                uploadArticleImage(file, 'app-image');
+                event.target.value = '';
+              }}
+            />
+          </label>
+          <input placeholder="Image alt text" value={newItem.imageAlt} onChange={(e) => setNewItem({ ...newItem, imageAlt: e.target.value })} style={inputStyle} />
         </>
       );
     }
@@ -832,7 +926,7 @@ export default function Admin() {
         <div>
           <h3 style={{ ...sectionTitleStyle, marginBottom: 8 }}>Admin Access</h3>
           <p style={{ ...noteStyle, marginBottom: 0 }}>
-            Public visitors can read data. Only signed-in admins should write to Supabase or upload article images.
+            Public visitors can read data. Only signed-in admins should write to Supabase or upload article and app images.
           </p>
         </div>
         {supabase ? (
@@ -889,29 +983,88 @@ export default function Admin() {
       ) : (
         <>
           <div style={panelStyle}>
-            <h3 style={sectionTitleStyle}>Add New {activeTab.slice(0, -1)}</h3>
+            <h3 style={sectionTitleStyle}>
+              {activeTab === 'apps' && editingAppIndex !== null
+                ? 'Edit app'
+                : `Add New ${activeTab.slice(0, -1)}`}
+            </h3>
             {renderBasicForm()}
             {formError && <p style={{ color: '#d15b5b', marginBottom: 12 }}>{formError}</p>}
-            <button onClick={addItem} style={buttonStyle}>
-              Add {activeTab.slice(0, -1)}
-            </button>
+            <div style={formActionRowStyle}>
+              <button onClick={addItem} style={buttonStyle}>
+                {activeTab === 'apps' && editingAppIndex !== null
+                  ? 'Update app'
+                  : `Add ${activeTab.slice(0, -1)}`}
+              </button>
+              {activeTab === 'apps' && editingAppIndex !== null && (
+                <button onClick={cancelAppEdit} style={secondaryButtonStyle}>
+                  Cancel edit
+                </button>
+              )}
+            </div>
           </div>
 
           <div style={panelStyle}>
             <h3 style={sectionTitleStyle}>
               Current {activeTab} ({currentItems.length})
             </h3>
-            {itemPreview.map((item, index) => (
-              <div key={`${item.title}-${index}`} style={itemRowStyle}>
-                <div>
-                  <strong style={{ color: '#e8b84b' }}>{item.title}</strong>
-                  <div style={{ fontSize: 12, color: '#6a5840' }}>{item.subtitle}</div>
-                </div>
-                <button onClick={() => deleteItem(index)} style={deleteStyle}>
-                  Delete
-                </button>
-              </div>
-            ))}
+            {activeTab === 'apps'
+              ? currentItems.map((app, index) => (
+                  <div key={`${app.id || app.name || 'app'}-${index}`} style={appRowStyle}>
+                    <div style={appRowMediaStyle}>
+                      <div style={appThumbStyle}>
+                        {app.image ? (
+                          <img
+                            src={app.image}
+                            alt={app.imageAlt || app.name || 'App logo'}
+                            style={appThumbImageStyle}
+                          />
+                        ) : (
+                          <span style={{ color: '#6a5840', fontSize: 12 }}>No logo</span>
+                        )}
+                      </div>
+                      <div>
+                        <strong style={{ color: '#e8b84b', display: 'block', marginBottom: 4 }}>
+                          {app.name || 'Untitled app'}
+                        </strong>
+                        {app.description && (
+                          <div style={{ fontSize: 13, color: '#8f7b5a', marginBottom: 6 }}>
+                            {app.description}
+                          </div>
+                        )}
+                        {app.url && (
+                          <a
+                            href={app.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={appUrlStyle}
+                          >
+                            {app.url}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                    <div style={rowActionWrapStyle}>
+                      <button onClick={() => editApp(index)} style={tinyButtonStyle}>
+                        Edit
+                      </button>
+                      <button onClick={() => deleteItem(index)} style={deleteStyle}>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))
+              : itemPreview.map((item, index) => (
+                  <div key={`${item.title}-${index}`} style={itemRowStyle}>
+                    <div>
+                      <strong style={{ color: '#e8b84b' }}>{item.title}</strong>
+                      <div style={{ fontSize: 12, color: '#6a5840' }}>{item.subtitle}</div>
+                    </div>
+                    <button onClick={() => deleteItem(index)} style={deleteStyle}>
+                      Delete
+                    </button>
+                  </div>
+                ))}
           </div>
         </>
       )}
@@ -933,7 +1086,7 @@ export default function Admin() {
       {authStatus && <p style={{ textAlign: 'center', color: '#e8b84b', fontSize: 14 }}>{authStatus}</p>}
       <p style={{ textAlign: 'center', color: '#6a5840', fontSize: 12, marginTop: 10 }}>
         {canWriteToSupabase
-          ? '✓ Admin session active - autosave, manual save, and article image uploads sync to Supabase'
+          ? '✓ Admin session active - autosave, manual save, and media uploads sync to Supabase'
           : supabase
           ? '✓ Database connected for reads - sign in as admin to sync writes and uploads'
           : '⚠ Database not connected - edits stay local until Supabase is configured'}
@@ -1035,6 +1188,18 @@ const buttonStyle = {
   letterSpacing: '2px',
 };
 
+const secondaryButtonStyle = {
+  ...buttonStyle,
+  border: '1px solid rgba(200,148,42,0.35)',
+  color: '#d8c8a0',
+};
+
+const formActionRowStyle = {
+  display: 'flex',
+  gap: '10px',
+  flexWrap: 'wrap',
+};
+
 const itemRowStyle = {
   padding: '15px',
   marginBottom: '10px',
@@ -1044,6 +1209,50 @@ const itemRowStyle = {
   justifyContent: 'space-between',
   alignItems: 'center',
   gap: '12px',
+};
+
+const appRowStyle = {
+  ...itemRowStyle,
+  alignItems: 'flex-start',
+  flexWrap: 'wrap',
+};
+
+const appRowMediaStyle = {
+  display: 'grid',
+  gridTemplateColumns: '80px 1fr',
+  gap: '14px',
+  alignItems: 'start',
+  flex: '1 1 420px',
+};
+
+const appThumbStyle = {
+  width: '80px',
+  height: '80px',
+  border: '1px solid rgba(200,148,42,0.2)',
+  background: 'rgba(7,6,4,0.85)',
+  display: 'grid',
+  placeItems: 'center',
+  overflow: 'hidden',
+};
+
+const appThumbImageStyle = {
+  width: '100%',
+  height: '100%',
+  objectFit: 'contain',
+  display: 'block',
+};
+
+const appUrlStyle = {
+  color: '#c8942a',
+  fontSize: '12px',
+  wordBreak: 'break-word',
+};
+
+const rowActionWrapStyle = {
+  display: 'flex',
+  gap: '8px',
+  flexWrap: 'wrap',
+  marginLeft: 'auto',
 };
 
 const deleteStyle = {
