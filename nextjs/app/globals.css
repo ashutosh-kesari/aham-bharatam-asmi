@@ -485,8 +485,15 @@ body::after {
 }
 
 .h-card {
+  display:block;
   width: 240px;
   flex-shrink: 0;
+  border:0;
+  padding:0;
+  background:transparent;
+  appearance:none;
+  text-align:left;
+  color:inherit;
   cursor: pointer;
   opacity: 0;
   transform: translateY(22px);
@@ -1764,6 +1771,31 @@ body::after {
   .chat-shell {
     right: 12px;
     bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+  .chat-launcher {
+    min-width: 58px;
+    width: 58px;
+    height: 58px;
+    padding: 0;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .chat-launcher::before {
+    display: none;
+  }
+  .chat-launcher span,
+  .chat-launcher small {
+    display: none;
+  }
+  .chat-launcher::after {
+    content: 'AI';
+    font-family: 'Cinzel', serif;
+    font-size: .74rem;
+    letter-spacing: .18em;
+    color: var(--gold-lt);
+    text-transform: uppercase;
   }
   .chat-panel {
     width: calc(100vw - 24px);
