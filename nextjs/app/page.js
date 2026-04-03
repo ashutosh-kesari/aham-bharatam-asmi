@@ -1183,7 +1183,12 @@ export default function Home() {
             </button>
           </div>
         </div>
-        <button className={`chat-launcher ${chatOpen ? 'active' : ''}`} onClick={toggleChat}>
+        <button
+          className={`chat-launcher ${chatOpen ? 'active' : ''}`}
+          onClick={toggleChat}
+          aria-label={chatOpen ? 'Close Bharatam AI chat' : 'Open Bharatam AI chat'}
+          type="button"
+        >
           <span>AI Chatbot</span>
           <small>{chatOpen ? 'Close' : 'Ask Bharatam AI'}</small>
         </button>
@@ -1297,7 +1302,7 @@ export default function Home() {
         </div>
 
         <div className="h-cards">
-          <div className="h-card" id="hca" onClick={() => handleDynastyClick('maurya')}>
+          <button type="button" className="h-card" id="hca" onClick={() => handleDynastyClick('maurya')}>
             <div className="h-card-inner">
               <div className="h-card-ico ico-d">👑</div>
               <div className="h-card-body">
@@ -1306,8 +1311,8 @@ export default function Home() {
                 <div className="h-card-cta">Dynasties of Bharat →</div>
               </div>
             </div>
-          </div>
-          <div className="h-card" id="hcb" onClick={() => navigateTo('dynasties')}>
+          </button>
+          <button type="button" className="h-card" id="hcb" onClick={() => navigateTo('dynasties')}>
             <div className="h-card-inner">
               <div className="h-card-ico ico-b">⏳</div>
               <div className="h-card-body">
@@ -1316,8 +1321,8 @@ export default function Home() {
                 <div className="h-card-cta">Open Dynasties →</div>
               </div>
             </div>
-          </div>
-          <div className="h-card" id="hcc" onClick={() => navigateTo('maps')}>
+          </button>
+          <button type="button" className="h-card" id="hcc" onClick={() => navigateTo('maps')}>
             <div className="h-card-inner">
               <div className="h-card-ico ico-h">🗺️</div>
               <div className="h-card-body">
@@ -1326,7 +1331,7 @@ export default function Home() {
                 <div className="h-card-cta">Open Map Atlas →</div>
               </div>
             </div>
-          </div>
+          </button>
         </div>
 
         <div className="s-cue" id="scue">
