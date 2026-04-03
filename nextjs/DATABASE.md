@@ -77,12 +77,22 @@ CREATE TABLE quizzes (
   explanation TEXT
 );
 
+CREATE TABLE apps (
+  id TEXT PRIMARY KEY,
+  name TEXT,
+  url TEXT,
+  description TEXT,
+  image_url TEXT,
+  image_alt TEXT
+);
+
 ALTER TABLE dynasties ENABLE ROW LEVEL SECURITY;
 ALTER TABLE battles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE articles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE facts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE maps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE quizzes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE apps ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Public read dynasties" ON dynasties FOR SELECT USING (true);
 CREATE POLICY "Public read battles" ON battles FOR SELECT USING (true);
@@ -90,6 +100,7 @@ CREATE POLICY "Public read articles" ON articles FOR SELECT USING (true);
 CREATE POLICY "Public read facts" ON facts FOR SELECT USING (true);
 CREATE POLICY "Public read maps" ON maps FOR SELECT USING (true);
 CREATE POLICY "Public read quizzes" ON quizzes FOR SELECT USING (true);
+CREATE POLICY "Public read apps" ON apps FOR SELECT USING (true);
 
 CREATE POLICY "Public write dynasties" ON dynasties FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Public write battles" ON battles FOR ALL USING (true) WITH CHECK (true);
@@ -97,6 +108,7 @@ CREATE POLICY "Public write articles" ON articles FOR ALL USING (true) WITH CHEC
 CREATE POLICY "Public write facts" ON facts FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Public write maps" ON maps FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Public write quizzes" ON quizzes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public write apps" ON apps FOR ALL USING (true) WITH CHECK (true);
 ```
 
 ### Step 3: Add environment variables
@@ -125,6 +137,7 @@ drop policy if exists "Public write articles" on articles;
 drop policy if exists "Public write facts" on facts;
 drop policy if exists "Public write maps" on maps;
 drop policy if exists "Public write quizzes" on quizzes;
+drop policy if exists "Public write apps" on apps;
 
 create policy "Authenticated write dynasties" on dynasties
 for all using (auth.uid() is not null) with check (auth.uid() is not null);
@@ -142,6 +155,9 @@ create policy "Authenticated write maps" on maps
 for all using (auth.uid() is not null) with check (auth.uid() is not null);
 
 create policy "Authenticated write quizzes" on quizzes
+for all using (auth.uid() is not null) with check (auth.uid() is not null);
+
+create policy "Authenticated write apps" on apps
 for all using (auth.uid() is not null) with check (auth.uid() is not null);
 ```
 
@@ -178,3 +194,4 @@ If Supabase is not configured, `/admin` still works with browser `localStorage` 
 - did-you-know facts
 - historical maps
 - quiz questions
+- explore-more app links

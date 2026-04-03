@@ -4,6 +4,7 @@ import { COMPREHENSIVE_DYNASTIES } from '../../../lib/comprehensiveData';
 import { DYN, BATTLES, ARTICLES, DYKS } from '../../../lib/data';
 import { HISTORICAL_MAPS } from '../../../lib/historicalMaps';
 import { DEFAULT_QUIZ_QUESTIONS } from '../../../lib/quizData';
+import { DEFAULT_MORE_APPS } from '../../../lib/appsData';
 
 export async function GET() {
   if (!supabase) {
@@ -18,6 +19,8 @@ export async function GET() {
     await supabase.from('facts').delete().neq('id', '');
     await supabase.from('maps').delete().neq('id', '');
     await supabase.from('quizzes').delete().neq('id', '');
+    const { error: deleteAppsError } = await supabase.from('apps').delete().neq('id', '');
+    if (deleteAppsError && deleteAppsError.code !== '42P01') throw deleteAppsError;
 
     // Prepare dynasties data from comprehensiveData.js
     const allDynasties = [
@@ -110,9 +113,20 @@ export async function GET() {
     const { error: quizError } = await supabase.from('quizzes').insert(quizData);
     if (quizError) throw quizError;
 
+    const appsData = DEFAULT_MORE_APPS.map((app) => ({
+      id: app.id,
+      name: app.name,
+      url: app.url,
+      description: app.description,
+      image_url: app.image,
+      image_alt: app.imageAlt,
+    }));
+    const { error: appsError } = await supabase.from('apps').insert(appsData);
+    if (appsError && appsError.code !== '42P01') throw appsError;
+
     return NextResponse.json({ 
       success: true, 
-      message: `Added ${dynastyData.length} dynasties, ${battlesData.length} battles, ${articlesData.length} articles, ${factsData.length} facts, ${mapsData.length} maps, ${quizData.length} quizzes`
+      message: `Added ${dynastyData.length} dynasties, ${battlesData.length} battles, ${articlesData.length} articles, ${factsData.length} facts, ${mapsData.length} maps, ${quizData.length} quizzes, ${appsData.length} apps`
     });
 
   } catch (error) {

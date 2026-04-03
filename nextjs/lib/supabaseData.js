@@ -4,6 +4,7 @@ import { supabase } from './supabase';
 import { DYN, BATTLES, ARTICLES, DYKS } from './data';
 import { HISTORICAL_MAPS } from './historicalMaps';
 import { DEFAULT_QUIZ_QUESTIONS } from './quizData';
+import { DEFAULT_MORE_APPS } from './appsData';
 
 const STORAGE_KEY = 'bharatam_data';
 
@@ -13,19 +14,24 @@ export async function fetchFromSupabase() {
   }
 
   try {
-    const [dynasties, battles, articles, facts, maps, quizzes] = await Promise.all([
+    const [dynasties, battles, articles, facts, maps, quizzes, apps] = await Promise.all([
       supabase.from('dynasties').select('*'),
       supabase.from('battles').select('*'),
       supabase.from('articles').select('*'),
       supabase.from('facts').select('*'),
       supabase.from('maps').select('*'),
-      supabase.from('quizzes').select('*')
+      supabase.from('quizzes').select('*'),
+      supabase.from('apps').select('*').order('name'),
     ]);
 
-    if (dynasties.error || battles.error || articles.error || facts.error || maps.error || quizzes.error) {
+    const appsTableMissing =
+      apps.error &&
+      (apps.error.code === '42P01' || /apps/i.test(apps.error.message || ''));
+
+    if (dynasties.error || battles.error || articles.error || facts.error || maps.error || quizzes.error || (apps.error && !appsTableMissing)) {
       console.error(
         'Supabase error:',
-        dynasties.error || battles.error || articles.error || facts.error || maps.error || quizzes.error,
+        dynasties.error || battles.error || articles.error || facts.error || maps.error || quizzes.error || apps.error,
       );
       return null;
     }
@@ -37,7 +43,8 @@ export async function fetchFromSupabase() {
       !articles.data?.length &&
       !facts.data?.length &&
       !maps.data?.length &&
-      !quizzes.data?.length
+      !quizzes.data?.length &&
+      !(apps.data || []).length
     ) {
       return null;
     }
@@ -99,6 +106,15 @@ export async function fetchFromSupabase() {
       explanation: q.explanation || '',
     });
 
+    const transformApp = (app) => ({
+      id: app.id,
+      name: app.name,
+      url: app.url,
+      description: app.description || '',
+      image: app.image_url || '',
+      imageAlt: app.image_alt || app.name || '',
+    });
+
     return {
       dynasties: (dynasties.data || []).map(transformDynasty),
       battles: (battles.data || []).map(transformBattle),
@@ -106,6 +122,7 @@ export async function fetchFromSupabase() {
       facts: facts.data?.map(f => f.content) || [],
       maps: (maps.data || []).map(transformMap),
       quizzes: (quizzes.data || []).map(transformQuiz),
+      apps: (apps.data || []).map(transformApp),
     };
   } catch (error) {
     console.error('Error fetching from Supabase:', error);
@@ -119,7 +136,7 @@ export async function saveToSupabase(data) {
   }
 
   try {
-    const { dynasties, battles, articles, facts, maps, quizzes } = data;
+    const { dynasties, battles, articles, facts, maps, quizzes, apps } = data;
 
     // Clear and insert dynasties
     if (dynasties) {
@@ -221,6 +238,26 @@ export async function saveToSupabase(data) {
       }
     }
 
+    if (apps) {
+      const { error: deleteAppsError } = await supabase.from('apps').delete().neq('id', '');
+      if (deleteAppsError && deleteAppsError.code !== '42P01') {
+        throw deleteAppsError;
+      }
+
+      if (apps.length > 0 && !deleteAppsError) {
+        const appsData = apps.map((app) => ({
+          id: app.id,
+          name: app.name,
+          url: app.url,
+          description: app.description || '',
+          image_url: app.image || '',
+          image_alt: app.imageAlt || app.name || '',
+        }));
+        const { error: insertAppsError } = await supabase.from('apps').insert(appsData);
+        if (insertAppsError) throw insertAppsError;
+      }
+    }
+
     return { success: true };
   } catch (error) {
     console.error('Error saving to Supabase:', error);
@@ -245,6 +282,7 @@ export async function getSiteData() {
           DYKS: supabaseData.facts || DYKS,
           MAPS: supabaseData.maps?.length ? supabaseData.maps : HISTORICAL_MAPS,
           QUIZZES: supabaseData.quizzes?.length ? supabaseData.quizzes : DEFAULT_QUIZ_QUESTIONS,
+          APPS: supabaseData.apps?.length ? supabaseData.apps : DEFAULT_MORE_APPS,
         };
       }
 
@@ -266,11 +304,12 @@ export async function getSiteData() {
           DYKS: parsed.dyks?.length > 0 ? parsed.dyks : DYKS,
           MAPS: parsed.maps?.length > 0 ? parsed.maps : HISTORICAL_MAPS,
           QUIZZES: parsed.quizzes?.length > 0 ? parsed.quizzes : DEFAULT_QUIZ_QUESTIONS,
+          APPS: parsed.apps?.length > 0 ? parsed.apps : DEFAULT_MORE_APPS,
         };
       } catch {}
     }
   }
 
   // Default data
-  return { DYN, BATTLES, ARTICLES, DYKS, MAPS: HISTORICAL_MAPS, QUIZZES: DEFAULT_QUIZ_QUESTIONS };
+  return { DYN, BATTLES, ARTICLES, DYKS, MAPS: HISTORICAL_MAPS, QUIZZES: DEFAULT_QUIZ_QUESTIONS, APPS: DEFAULT_MORE_APPS };
 }
