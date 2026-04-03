@@ -62,7 +62,7 @@ export const viewport = {
 };
 
 const cursorScript = `(function(){
-  if(window.matchMedia('(hover:none)').matches) return;
+  if(!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
   var x=-200,y=-200,rx=-200,ry=-200,dot,ring,raf;
   function init(){
     dot=document.getElementById('cdot');
