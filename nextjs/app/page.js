@@ -789,13 +789,20 @@ export default function Home() {
   // Cursor effect.
   useEffect(() => {
     if (!isMounted) return undefined;
+    if (typeof window === 'undefined') return undefined;
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return undefined;
 
-    const timeoutId = setTimeout(() => {
+    let frameId;
+    let timeoutId;
+    let handleMove;
+    let handleHover;
+
+    timeoutId = window.setTimeout(() => {
       const dot = document.getElementById('cdot');
       const ring = document.getElementById('cring');
       if (!dot || !ring) return;
 
-      const handleMove = (event) => {
+      handleMove = (event) => {
         cursorRef.current.x = event.clientX;
         cursorRef.current.y = event.clientY;
       };
@@ -809,13 +816,13 @@ export default function Home() {
         cursorRef.current.ry += (cursorRef.current.y - cursorRef.current.ry) * 0.18;
 
         ring.style.transform = `translate3d(${cursorRef.current.rx}px, ${cursorRef.current.ry}px, 0) translate(-50%, -50%)`;
-        requestAnimationFrame(animate);
+        frameId = requestAnimationFrame(animate);
       };
 
       animate();
 
-        const handleHover = (event) => {
-          const target = event.target.closest(
+      handleHover = (event) => {
+        const target = event.target.closest(
           'a, button, [data-page], .dc, .bc, .rel-c, .hp-card, .other-dyn-card, .map-card, .quiz-option, .timeline-draggable',
         );
 
@@ -831,14 +838,14 @@ export default function Home() {
       };
 
       document.addEventListener('mouseover', handleHover);
-
-      return () => {
-        document.removeEventListener('mousemove', handleMove);
-        document.removeEventListener('mouseover', handleHover);
-      };
     }, 100);
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      clearTimeout(timeoutId);
+      cancelAnimationFrame(frameId);
+      if (handleMove) document.removeEventListener('mousemove', handleMove);
+      if (handleHover) document.removeEventListener('mouseover', handleHover);
+    };
   }, [isMounted]);
 
   useEffect(() => {
@@ -874,6 +881,17 @@ export default function Home() {
     }, 2200);
 
     return () => clearTimeout(timer);
+  }, [introDone]);
+
+  useEffect(() => {
+    if (introDone) return undefined;
+
+    const failsafeTimer = setTimeout(() => {
+      setSplashVisible(false);
+      setIntroDone(true);
+    }, 5000);
+
+    return () => clearTimeout(failsafeTimer);
   }, [introDone]);
 
   useEffect(() => {

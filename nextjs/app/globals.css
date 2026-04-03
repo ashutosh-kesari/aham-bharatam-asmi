@@ -36,10 +36,13 @@ body {
   overflow-x: clip;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
-  cursor: none;
+  cursor: auto;
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
+  body {
+    cursor: none;
+  }
   *, *::before, *::after {
     cursor: none !important;
   }
@@ -54,7 +57,7 @@ body.admin-route .c-ring {
   display: none;
 }
 
-@media (hover:none) { body { cursor: auto; } }
+@media (hover:none), (pointer:coarse), (max-width:900px) { body { cursor: auto; } }
 
 /* Noise overlay */
 body::after {
@@ -93,7 +96,7 @@ body::after {
   border:1.5px solid rgba(200,148,42,0.7); z-index:9998;
   transition:width .16s ease, height .16s ease, border-color .16s ease;
 }
-@media (hover:none) { .c-dot, .c-ring { display:none; } }
+@media (hover:none), (pointer:coarse), (max-width:900px) { .c-dot, .c-ring { display:none !important; } }
 
 /* Page system — full viewport, stacked */
 .pg {
@@ -570,6 +573,44 @@ body::after {
   .h-card  { width:calc(50% - 7px); min-width:200px; }
 }
 
+@media (max-width:1024px) {
+  .h-cards {
+    padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px));
+  }
+  .dyk {
+    display: none !important;
+  }
+  .chat-shell {
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+  .chat-launcher {
+    min-width: 58px;
+    width: 58px;
+    height: 58px;
+    padding: 0;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .chat-launcher::before {
+    display: none;
+  }
+  .chat-launcher span,
+  .chat-launcher small {
+    display: none;
+  }
+  .chat-launcher::after {
+    content: 'AI';
+    font-family: 'Cinzel', serif;
+    font-size: .74rem;
+    letter-spacing: .18em;
+    color: var(--gold-lt);
+    text-transform: uppercase;
+  }
+}
+
 @media (max-width:600px) {
   #pg-home { min-height:100dvh; }
   .hero-wrap {
@@ -602,8 +643,6 @@ body::after {
   .h-card-dsc { font-size:.75rem; }
   .h-card-cta { font-size:.58rem; }
   .s-cue { display:none; }
-  /* Hide DYK on mobile */
-  .dyk { display:none !important; }
 }
 
 /* ===== DYNASTIES PAGE ===== */
@@ -1767,36 +1806,7 @@ body::after {
   .dc:hover { transform: none; }
   .bc:hover { transform: none; }
 
-  /* ── Chat / DYK positioning on small screens ── */
-  .chat-shell {
-    right: 12px;
-    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  }
-  .chat-launcher {
-    min-width: 58px;
-    width: 58px;
-    height: 58px;
-    padding: 0;
-    border-radius: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .chat-launcher::before {
-    display: none;
-  }
-  .chat-launcher span,
-  .chat-launcher small {
-    display: none;
-  }
-  .chat-launcher::after {
-    content: 'AI';
-    font-family: 'Cinzel', serif;
-    font-size: .74rem;
-    letter-spacing: .18em;
-    color: var(--gold-lt);
-    text-transform: uppercase;
-  }
+  /* ── Chat positioning on small screens ── */
   .chat-panel {
     width: calc(100vw - 24px);
     max-height: 70vh;
